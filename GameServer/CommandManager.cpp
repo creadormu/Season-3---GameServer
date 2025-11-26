@@ -43,6 +43,7 @@
 #include "ServerInfo.h"
 #include "SetItemType.h"
 #include "Util.h"
+#include "FakeOnline.h"
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction

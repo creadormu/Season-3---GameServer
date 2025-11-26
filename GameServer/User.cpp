@@ -80,6 +80,7 @@
 #include "Warehouse.h"
 #include "FakeOnline.h"
 
+
 int gObjCount;
 int gObjMonCount;
 int gObjCallMonCount;
@@ -2602,7 +2603,7 @@ int gObjMoveGate(int aIndex,int gate) // OK
 			lpObj->State = OBJECT_DELCMD;
 		}
 		lpObj->RegenOk = 1;
-		gMove.GCTeleportSend(aIndex, gate, lpObj->Map, (BYTE)lpObj->X, (BYTE)lpObj->Y, lpObj->Dir);
+		gMove->GCTeleportSend(aIndex, gate, lpObj->Map, (BYTE)lpObj->X, (BYTE)lpObj->Y, lpObj->Dir);
 		return 0;
 	}
 

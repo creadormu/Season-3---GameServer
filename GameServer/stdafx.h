@@ -22,6 +22,8 @@
 #define GAMESERVER_SHOP 0
 #endif
 
+
+#define USE_FAKE_ONLINE         1
 // System Include
 #include <windows.h>
 #include <winsock2.h>
@@ -46,6 +48,7 @@
 #include <sqlext.h>
 #include <shellapi.h>
 #include "Singleton.h"
+#include "..\\..\\..\\Util\\\pugixml\\pugixml.hpp"
 #include "..\\..\\..\\Util\\lua\\include\\lua.hpp"
 
 #pragma comment(lib,"ws2_32.lib")

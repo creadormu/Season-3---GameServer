@@ -707,6 +707,7 @@
       <Filter>Util</Filter>
     </ClInclude>
     <ClInclude Include="FakeOnline.h" />
+    <ClInclude Include="MemScript.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ServerDisplayer.cpp">
@@ -1334,6 +1335,9 @@
       <Filter>Util</Filter>
     </ClCompile>
     <ClCompile Include="FakeOnline.cpp">
+      <Filter>Others</Filter>
+    </ClCompile>
+    <ClCompile Include="MemScript.cpp">
       <Filter>Others</Filter>
     </ClCompile>
   </ItemGroup>

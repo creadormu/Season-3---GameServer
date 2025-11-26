@@ -33,6 +33,9 @@
 #include "SkillUseArea.h"
 #include "Util.h"
 #include "Viewport.h"
+#include "Protocol.h"
+#include "User.h"
+#include "DefaultClassInfo.h"
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction

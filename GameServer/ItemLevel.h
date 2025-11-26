@@ -19,6 +19,7 @@ class CItemLevel
 public:
 	void Load(char* path);
 	bool CheckItemlevel(int index,int level);
+	char* GetItemName(int ItemIndex, int Level);
 public:
 	std::vector<ITEM_LEVEL_INFO> m_ItemLevelInfo;
 };

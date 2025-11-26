@@ -36,6 +36,7 @@ public:
 	bool IsGate(int index);
 	bool IsInGate(LPOBJ lpObj,int index);
 	bool GetGate(int index,int* gate,int* map,int* x,int* y,int* dir,int* level);
+	bool MapIsInGate(LPOBJ lpObj, int index);
 public:
 	std::map<int,GATE_INFO> m_GateInfo;
 };

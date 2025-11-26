@@ -725,3 +725,29 @@ void CParty::GCPartyLifeSend(int index) // OK
 		}
 	}
 }
+
+//AGREGAR AL FINAL
+bool CParty::GetLevel(int party_number)
+{
+	if (this->IsParty(party_number) == FALSE)
+	{
+		return FALSE;
+	}
+	int bandlevel = 0;
+	for (int n = 0; n < MAX_PARTY_USER; n++)
+	{
+		if (OBJECT_RANGE(this->m_PartyInfo[party_number].Index[n]) != 0)
+		{
+			bandlevel = gObj[this->m_PartyInfo[party_number].Index[n]].Level;
+			if (n == 0) {
+				minlevel = bandlevel;
+				maxlevel = bandlevel;
+			}
+			if (minlevel >= bandlevel)
+				minlevel = bandlevel;
+			if (maxlevel <= bandlevel)
+				maxlevel = bandlevel;
+		}
+	}
+	return TRUE;
+}

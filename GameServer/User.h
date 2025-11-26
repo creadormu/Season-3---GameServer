@@ -709,7 +709,9 @@ struct OBJECTSTRUCT
 	BYTE Rest;
 	char ViewState;
 	DWORD ViewSkillState;
+	DWORD LastMoveTime;
 	DWORD LastAttackTime;
+	int AttackCustomDelay;
 	DWORD TeleportTime;
 	char Teleport;
 	char KillerType;
@@ -738,6 +740,7 @@ struct OBJECTSTRUCT
 	DWORD MySelfDefenseTime;
 	int PartyNumber;
 	int PartyTargetUser;
+	int GuildNumber;
 	struct GUILD_INFO* Guild;
 	char GuildName[11];
 	int GuildIndex;
@@ -907,6 +910,14 @@ struct OBJECTSTRUCT
 	DWORD SDAutoRecuperationTime;
 	DWORD OnlineRewardTime;
 	int Reset;
+	int LoadGens;
+	int GensFamily;
+	int GensRank;
+	int GensSymbol;
+	int GensContribution;
+	int GensNextContribution;
+	struct GENS_SYSTEM_VICTIM_LIST* GensVictimList;
+	DWORD CheckSumTime; // Add this line to the OBJECTSTRUCT structure
 
 	//FakeOnline_EMU
 #if USE_FAKE_ONLINE == TRUE
@@ -1066,6 +1077,52 @@ struct OBJECTSTRUCT
 	int FriendCount;
 	bool CustomMonsterDrop;
 
+
+
+	bool	m_OfflineSocket;
+	int		m_OfflineMode;
+	int		MuOffHelperTime;
+	/*+172*/	DWORD	HuntingRange;
+	/*+176*/	BYTE	RecoveryPotionOn;
+	/*+177*/	BYTE	RecoveryPotionPercent;
+	/*+178*/	BYTE	RecoveryHealOn;			//-> CLASS_ELF
+	/*+179*/	BYTE	RecoveryHealPercent;	//-> CLASS_ELF
+	/*+180*/	BYTE	RecoveryDrainOn;		//-> CLASS_SUMMONER
+	/*+181*/	BYTE	RecoveryDrainPercent;	//-> CLASS_SUMMONER
+	/*+182*/	BYTE	DistanceLongOn;
+	/*+183*/	BYTE	DistanceReturnOn;
+	/*+184*/	DWORD	DistanceMin;
+	/*+188*/	DWORD	SkillBasicID;
+	/*+240*/	BYTE	ComboOn;				//-> CLASS_KNIGHT
+	/*+241*/	BYTE	PartyModeOn;
+	/*+242*/	BYTE	PartyModeHealOn;		//-> CLASS_ELF
+	/*+243*/	BYTE	PartyModeHealPercent;	//-> CLASS_ELF
+	/*+244*/	BYTE	PartyModeBuffOn;
+	/*+260*/	BYTE	BuffOn;
+	/*+264*/	DWORD	BuffSkill[3];
+	/*+288*/	DWORD	ObtainRange;
+	/*+292*/	BYTE	ObtainRepairOn;
+	/*+293*/	BYTE	ObtainPickNear;
+	/*+294*/	BYTE	ObtainPickSelected;
+	/*+295*/	BYTE	ObtainPickJewels;
+	/*+296*/	BYTE	ObtainPickAncient;
+	/*+297*/	BYTE	ObtainPickMoney;
+	/*+298*/	BYTE	ObtainPickExcellent;
+	/*+299*/	BYTE	ObtainPickExtra;
+	int		ObtainPickExtraCount;
+	/*+300*/	char	ObtainPickItemList[12][16];
+
+	int orderskill;
+
+	short m_OfflineCoordX;
+	short m_OfflineCoordY;
+	DWORD m_OfflineTimeResetMove;
+
+
+
+
+
+
 };
 
 struct OBJECTSTRUCT_HEADER
@@ -1097,6 +1154,8 @@ extern MESSAGE_STATE_ATTACK_MACHINE_HEADER gSMAttackProcMsg;
 extern DWORD gLevelExperience[MAX_CHARACTER_LEVEL+1];
 
 extern DWORD gPetExperience[MAX_CHARACTER_LEVEL+1];
+
+#define OBJMAX_RANGE(aIndex)		(((aIndex) < 0 )?FALSE:( (aIndex) > MAX_OBJECT-1 )?FALSE:TRUE)
 
 //**************************************************************************//
 // OBJECT MAIN FUNCTIONS ***************************************************//

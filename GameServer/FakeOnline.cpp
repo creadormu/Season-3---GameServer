@@ -1,3 +1,10 @@
+#define CA_MAP_RANGE(x) ((x) == 18)
+#define CC_MAP_RANGE(x) ((x) == 11)
+#define IT_MAP_RANGE(x) ((x) == 41 || (x) == 42 || (x) == 43 || (x) == 44 || (x) == 45 || (x) == 46)
+#define DA_MAP_RANGE(x) ((x) == 52)
+#define DG_MAP_RANGE(x) ((x) == 53)
+#define IG_MAP_RANGE(x) ((x) == 55)
+
 #include "stdafx.h"
 #include "FakeOnline.h"
 #include "ItemManager.h"
@@ -17,15 +24,15 @@
 #include "Message.h"
 #include "Monster.h"
 #include "DSProtocol.h"
-#include <iomanip>
-#include <stdlib.h>
+//#include <iomanip>
+//#include <stdlib.h>
 #include "Quest.h"
 #include "QuestObjective.h"
 #include <list>
 #include <string>
 #include "JSProtocol.h"
 #include "ObjectManager.h"
-#include "OfflineMode.h"
+//#include "OfflineMode.h"
 #include "Move.h"
 #include "CommandManager.h"
 #include "Gate.h"
@@ -34,17 +41,19 @@
 #include "MapServerManager.h"
 #include "CustomAttack.h"
 #include "Attack.h"
-#include "Party.h"
 #include "Log.h" // Para gLog u otra utilidad de logging
 #include "User.h"
+#include "Item.h"
 
 #if USE_FAKE_ONLINE == TRUE
+
 //========================================================================================================================
 CFakeOnline s_FakeOnline;
 
 std::vector<std::string> g_BotPhrasesGeneral;
 std::vector<std::string> g_BotPhrasesNear;
-std::vector<std::string> g_BotPhrasesInParty; // <- LÍNEA AGREGADA: Definición para frases en party
+std::vector<std::string> g_BotPhrasesInParty;
+
 
 CFakeOnline::CFakeOnline() // OK
 {
@@ -297,7 +306,7 @@ void CFakeOnline::RestoreFakeOnline()
 			gObj[aIndex].DestX = 0;
 			gObj[aIndex].DestY = 0;
 
-			GJConnectAccountSend(aIndex, account, password, "127.0.0.1");
+			GJConnectAccountSend(aIndex, account, password, "127.0.0.1", 0);
 
 			gObj[aIndex].Socket = INVALID_SOCKET;
 
@@ -364,7 +373,7 @@ void FakeAnimationMove(int aIndex, int x, int y, bool dixa)
 	return;
 	}*/
 
-	if (gEffectManager.CheckStunEffect(lpObj) != 0 || gEffectManager.CheckImmobilizeEffect(lpObj) != 0)
+	if (gEffectManager->CheckStunEffect(lpObj) != 0 || gEffectManager->CheckImmobilizeEffect(lpObj) != 0)
 	{
 		return;
 	}
@@ -372,7 +381,7 @@ void FakeAnimationMove(int aIndex, int x, int y, bool dixa)
 	if (lpObj->SkillSummonPartyTime != 0)
 	{
 		lpObj->SkillSummonPartyTime = 0;
-		gNotice.GCNoticeSend(lpObj->Index, 1, 0, 0, 0, 0, 0, gMessage.GetMessage(272));
+		gNotice->GCNoticeSend(lpObj->Index, 1, 0, 0, 0, 0, 0, gMessage->GetMessageA(272));
 	}
 
 	lpObj->Dir = path[0] >> 4;
@@ -423,20 +432,23 @@ void FakeAnimationMove(int aIndex, int x, int y, bool dixa)
 		int RandY = rand() % 3 + 1;
 		BYTE wall = 0;
 		if (x > lpObj->X) {
-			wall = gMap[lpObj->Map].CheckWall2(lpObj->X, lpObj->Y, lpObj->X + RandX, lpObj->Y);
-			if (wall == 1) lpObj->X += RandX;
+			// WITH THIS:
+			BYTE attr = gMap[lpObj->Map].GetAttr(lpObj->X + RandX, lpObj->Y);
+			if ((attr & 1) == 0) lpObj->X += RandX;
 		}
 		else if (x <  lpObj->X) {
-			wall = gMap[lpObj->Map].CheckWall2(lpObj->X, lpObj->Y, lpObj->X - RandX, lpObj->Y);
-			if (wall == 1)  lpObj->X -= RandX;
+			// WITH THIS:
+			BYTE attr = gMap[lpObj->Map].GetAttr(lpObj->X + RandX, lpObj->Y);
+			if ((attr & 1) == 0) lpObj->X += RandX;
 		}
 		if (y > lpObj->Y) {
-			wall = gMap[lpObj->Map].CheckWall2(lpObj->X, lpObj->Y, lpObj->X, lpObj->Y + RandY);
-			if (wall == 1) lpObj->Y += RandY;
+			// WITH THIS:
+			BYTE attr = gMap[lpObj->Map].GetAttr(lpObj->X + RandY, lpObj->Y);
+			if ((attr & 1) == 0) lpObj->X += RandY;
 		}
 		else if (y <  lpObj->Y) {
-			wall = gMap[lpObj->Map].CheckWall2(lpObj->X, lpObj->Y, lpObj->X, lpObj->Y - RandY);
-			if (wall == 1) lpObj->Y -= RandY;
+			BYTE attr = gMap[lpObj->Map].GetAttr(lpObj->X - RandY, lpObj->Y);
+			if ((attr & 1) == 0) lpObj->X += RandY;
 		}
 
 	}
@@ -502,11 +514,11 @@ void FakeAutoRepair(int aIndex)
 	{
 		if (lpObj->Inventory[n].IsItem() != 0)
 		{
-			int money = gItemManager.RepairItem(lpObj, &lpObj->Inventory[n], n, 1);
+			int money = gItemManager->RepairItem(lpObj, &lpObj->Inventory[n], n, 1, 0);
 
 			if (money != 0)
 			{
-				gObjectManager.CharacterCalcAttribute(aIndex);
+				gObjectManager->CharacterCalcAttribute(aIndex);
 			}
 		}
 	}
@@ -551,7 +563,7 @@ void CFakeOnline::Attack(int aIndex)
 		return;
 	}
 
-	if (gServerInfo.InSafeZone(aIndex) == true)
+	if (gServerInfo->InSafeZone(aIndex) == true)
 	{
 		//this->OnHelperpAlreadyConnected(lpObj);
 		return;
@@ -589,7 +601,7 @@ bool FakeitemListPickUp(int Index, int Level, LPOBJ lpObj)
 {
 	for (int i = 0; i < lpObj->ObtainPickExtraCount; i++)
 	{
-		if (strstr(gItemLevel.GetItemName(Index, Level), lpObj->ObtainPickItemList[i]) != NULL)
+		if (strstr(gItemLevel->GetItemName(Index, Level), lpObj->ObtainPickItemList[i]) != NULL)
 		{
 			return true;
 		}
@@ -620,7 +632,7 @@ int CFakeOnline::NhatItem(int aIndex)
 		return 0;
 	}
 
-	if (gServerInfo.InSafeZone(aIndex) == true)
+	if (gServerInfo->InSafeZone(aIndex) == true)
 	{
 		//this->OnHelperpAlreadyConnected(lpObj);
 		return 0;
@@ -725,7 +737,7 @@ int CFakeOnline::NhatItem(int aIndex)
 				//all items
 				if (lpMapItem->m_QuestItem != false)
 				{
-					if (!gQuestObjective.CheckQuestObjectiveItemCount(lpObj, lpMapItem->m_Index, lpMapItem->m_Level))
+					if (!gQuestObjective->CheckQuestObjectiveItemCount(lpObj, lpMapItem->m_Index, lpMapItem->m_Level))
 					{
 						continue;
 					}
@@ -733,13 +745,13 @@ int CFakeOnline::NhatItem(int aIndex)
 
 				CItem item = (*lpMapItem);
 
-				BYTE result = gItemManager.InventoryInsertItemStack(&gObj[aIndex], lpMapItem);
+				BYTE result = gItemManager->InventoryInsertItemStack(&gObj[aIndex], lpMapItem);
 				if (result != 0xFF)
 				{
 					//gPickup.MsgPickUpProc(aIndex,&item);//Thong Bao Khi nhat Item
 					gMap[map_num].ItemGive(aIndex, n);
 					{
-						BYTE pos = gItemManager.InventoryInsertItem(aIndex, item);
+						BYTE pos = gItemManager->InventoryInsertItem(aIndex, item);
 						if (pos != 0xFF)
 						{
 							::GCPartyItemInfoSend(aIndex, lpMapItem);
@@ -760,37 +772,37 @@ void CFakeOnline::PostChatMSG(LPOBJ lpObj)
 	{
 		if (info->PostKhiDie == 1) {
 			Sleep(100);
-			if (gServerInfo.m_CommandPostType == 0)
+			if (gServerInfo->m_CommandPostType == 0)
 			{
-				PostMessage1(lpObj->Name, gMessage.GetMessage(69), gMessage.GetMessage(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
+				PostMessage1(lpObj->Name, gMessage->GetMessageA(69), gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
 			}
-			else if (gServerInfo.m_CommandPostType == 1)
+			else if (gServerInfo->m_CommandPostType == 1)
 			{
-				PostMessage2(lpObj->Name, gMessage.GetMessage(69), gMessage.GetMessage(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
+				PostMessage2(lpObj->Name, gMessage->GetMessageA(69), gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
 			}
-			else if (gServerInfo.m_CommandPostType == 2)
+			else if (gServerInfo->m_CommandPostType == 2)
 			{
-				PostMessage3(lpObj->Name, gMessage.GetMessage(69), gMessage.GetMessage(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
+				PostMessage3(lpObj->Name, gMessage->GetMessageA(69), gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
 			}
-			else if (gServerInfo.m_CommandPostType == 3)
+			else if (gServerInfo->m_CommandPostType == 3)
 			{
-				PostMessage4(lpObj->Name, gMessage.GetMessage(69), gMessage.GetMessage(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
+				PostMessage4(lpObj->Name, gMessage->GetMessageA(69), gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
 			}
-			else if (gServerInfo.m_CommandPostType == 4)
+			else if (gServerInfo->m_CommandPostType == 4)
 			{
-				GDGlobalPostSend(gMapServerManager.GetMapServerGroup(), 0, lpObj->Name, gMessage.GetMessage(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
+				GDGlobalPostSend(gMapServerManager->GetMapServerGroup(), 0, lpObj->Name, gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
 			}
-			else if (gServerInfo.m_CommandPostType == 5)
+			else if (gServerInfo->m_CommandPostType == 5)
 			{
-				GDGlobalPostSend(gMapServerManager.GetMapServerGroup(), 1, lpObj->Name, gMessage.GetMessage(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
+				GDGlobalPostSend(gMapServerManager->GetMapServerGroup(), 1, lpObj->Name, gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
 			}
-			else if (gServerInfo.m_CommandPostType == 6)
+			else if (gServerInfo->m_CommandPostType == 6)
 			{
-				GDGlobalPostSend(gMapServerManager.GetMapServerGroup(), 2, lpObj->Name, gMessage.GetMessage(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
+				GDGlobalPostSend(gMapServerManager->GetMapServerGroup(), 2, lpObj->Name, gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
 			}
-			else if (gServerInfo.m_CommandPostType == 7)
+			else if (gServerInfo->m_CommandPostType == 7)
 			{
-				GDGlobalPostSend(gMapServerManager.GetMapServerGroup(), 3, lpObj->Name, gMessage.GetMessage(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
+				GDGlobalPostSend(gMapServerManager->GetMapServerGroup(), 3, lpObj->Name, gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
 			}
 		}
 	}
@@ -839,7 +851,7 @@ void CFakeOnline::QuayLaiToaDoGoc(int aIndex)
 			LogAdd(LOG_BLUE, "[FakeOnline][%s] Fix Lag Reset Move", lpObj->Name);
 		}
 
-		if (gGate.MapIsInGate(lpObj, info->GateNumber) == 0 || (PhamViDiTrain >= 100 && !lpObj->IsFakeRegen))
+		if (gGate->MapIsInGate(lpObj, info->GateNumber) == 0 || (PhamViDiTrain >= 100 && !lpObj->IsFakeRegen))
 		{
 
 			gObjMoveGate(lpObj->Index, info->GateNumber);
@@ -848,7 +860,7 @@ void CFakeOnline::QuayLaiToaDoGoc(int aIndex)
 		}
 		if (GetTickCount() >= lpObj->m_OfflineTimeResetMove + 2000)
 		{
-			if ((PhamViDiTrain >= (lpObj->IsFakeMoveRange + 5) && !lpObj->IsFakeRegen) || gServerInfo.InSafeZone(lpObj->Index) == true)
+			if ((PhamViDiTrain >= (lpObj->IsFakeMoveRange + 5) && !lpObj->IsFakeRegen) || gServerInfo->InSafeZone(lpObj->Index) == true)
 			{
 				int DiChuyenX = lpObj->X;
 				int DiChuyenY = lpObj->Y;
@@ -964,11 +976,11 @@ void CFakeOnline::SuDungMauMana(int aIndex)	//-- OK
 
 			pMsg.SourceSlot = 0xFF;
 
-			pMsg.SourceSlot = ((pMsg.SourceSlot == 0xFF) ? gItemManager.GetInventoryItemSlot(lpObj, GET_ITEM(14, 3), -1) : pMsg.SourceSlot);
+			pMsg.SourceSlot = ((pMsg.SourceSlot == 0xFF) ? gItemManager->GetInventoryItemSlot(lpObj, GET_ITEM(14, 3), -1) : pMsg.SourceSlot);
 
-			pMsg.SourceSlot = ((pMsg.SourceSlot == 0xFF) ? gItemManager.GetInventoryItemSlot(lpObj, GET_ITEM(14, 2), -1) : pMsg.SourceSlot);
+			pMsg.SourceSlot = ((pMsg.SourceSlot == 0xFF) ? gItemManager->GetInventoryItemSlot(lpObj, GET_ITEM(14, 2), -1) : pMsg.SourceSlot);
 
-			pMsg.SourceSlot = ((pMsg.SourceSlot == 0xFF) ? gItemManager.GetInventoryItemSlot(lpObj, GET_ITEM(14, 1), -1) : pMsg.SourceSlot);
+			pMsg.SourceSlot = ((pMsg.SourceSlot == 0xFF) ? gItemManager->GetInventoryItemSlot(lpObj, GET_ITEM(14, 1), -1) : pMsg.SourceSlot);
 
 			pMsg.TargetSlot = 0xFF;
 
@@ -976,7 +988,7 @@ void CFakeOnline::SuDungMauMana(int aIndex)	//-- OK
 
 			if (INVENTORY_FULL_RANGE(pMsg.SourceSlot) != 0)
 			{
-				gItemManager.CGItemUseRecv(&pMsg, lpObj->Index);
+				gItemManager->CGItemUseRecv(&pMsg, lpObj->Index);
 			}
 		}
 	}
@@ -986,15 +998,15 @@ void CFakeOnline::SuDungMauMana(int aIndex)	//-- OK
 	{
 		CSkill* RenderSkillHealing;
 
-		RenderSkillHealing = gSkillManager.GetSkill(lpObj, SKILL_HEAL);
+		RenderSkillHealing = gSkillManager->GetSkill(lpObj, SKILL_HEAL);
 
 		if (RenderSkillHealing != 0)
 		{
 			if (lpObj->Life < ((lpObj->MaxLife * lpObj->RecoveryHealPercent) / 100))
 			{
-				if (gEffectManager.CheckEffect(lpObj, gSkillManager.GetSkillEffect(RenderSkillHealing->m_index)) == 0)
+				if (gEffectManager->CheckEffect(lpObj, gSkillManager->GetSkillEffect(RenderSkillHealing->m_index)) == 0)
 				{
-					gSkillManager.UseAttackSkill(lpObj->Index, lpObj->Index, RenderSkillHealing);
+					gSkillManager->UseAttackSkill(lpObj->Index, lpObj->Index, RenderSkillHealing);
 				}
 			}
 		}
@@ -1010,7 +1022,7 @@ void CFakeOnline::TuDongBuffSkill(int aIndex)	//-- OK
 	LPOBJ lpObj = &gObj[aIndex];
 	LPOBJ lpTarget;
 
-	if (gServerInfo.InSafeZone(aIndex) == true)
+	if (gServerInfo->InSafeZone(aIndex) == true)
 	{
 		return;
 	}
@@ -1023,13 +1035,13 @@ void CFakeOnline::TuDongBuffSkill(int aIndex)	//-- OK
 		{
 			if (lpObj->BuffSkill[n] > 0)
 			{
-				RenderBuff = gSkillManager.GetSkill(lpObj, lpObj->BuffSkill[n]);
+				RenderBuff = gSkillManager->GetSkill(lpObj, lpObj->BuffSkill[n]);
 
 				if (RenderBuff != 0)
 				{
-					if (gEffectManager.CheckEffect(lpObj, gSkillManager.GetSkillEffect(RenderBuff->m_index)) == 0)
+					if (gEffectManager->CheckEffect(lpObj, gSkillManager->GetSkillEffect(RenderBuff->m_index)) == 0)
 					{
-						gSkillManager.UseAttackSkill(lpObj->Index, lpObj->Index, RenderBuff); //Buff Your self
+						gSkillManager->UseAttackSkill(lpObj->Index, lpObj->Index, RenderBuff); //Buff Your self
 					}
 				}
 			}
@@ -1047,13 +1059,13 @@ void CFakeOnline::TuDongBuffSkill(int aIndex)	//-- OK
 			for (int i = 0; i < MAX_PARTY_USER; i++)
 			{
 
-				if (OBJECT_RANGE(gParty.m_PartyInfo[lpObj->PartyNumber].Index[i]) != 0 && gObjCalcDistance(lpObj, &gObj[gParty.m_PartyInfo[lpObj->PartyNumber].Index[i]]) < MAX_PARTY_DISTANCE)
+				if (OBJECT_RANGE(gParty->m_PartyInfo[lpObj->PartyNumber].Index[i]) != 0 && gObjCalcDistance(lpObj, &gObj[gParty->m_PartyInfo[lpObj->PartyNumber].Index[i]]) < MAX_PARTY_DISTANCE)
 				{
-					RenderPartyHealing = gSkillManager.GetSkill(lpObj, SKILL_HEAL);
+					RenderPartyHealing = gSkillManager->GetSkill(lpObj, SKILL_HEAL);
 
 					if (RenderPartyHealing != 0)
 					{
-						lpTarget = &gObj[gParty.m_PartyInfo[lpObj->PartyNumber].Index[i]];
+						lpTarget = &gObj[gParty->m_PartyInfo[lpObj->PartyNumber].Index[i]];
 
 						if (lpTarget->Index == lpObj->Index)
 						{
@@ -1061,9 +1073,9 @@ void CFakeOnline::TuDongBuffSkill(int aIndex)	//-- OK
 						}
 						if (lpTarget->Life < ((lpTarget->MaxLife * lpObj->PartyModeHealPercent) / 100))
 						{
-							if (gEffectManager.CheckEffect(lpTarget, gSkillManager.GetSkillEffect(RenderPartyHealing->m_index)) == 0)
+							if (gEffectManager->CheckEffect(lpTarget, gSkillManager->GetSkillEffect(RenderPartyHealing->m_index)) == 0)
 							{
-								gSkillManager.UseAttackSkill(lpObj->Index, lpTarget->Index, RenderPartyHealing);
+								gSkillManager->UseAttackSkill(lpObj->Index, lpTarget->Index, RenderPartyHealing);
 							}
 						}
 					}
@@ -1077,21 +1089,21 @@ void CFakeOnline::TuDongBuffSkill(int aIndex)	//-- OK
 
 			for (int i = 0; i < MAX_PARTY_USER; i++)
 			{
-				if (OBJECT_RANGE(gParty.m_PartyInfo[lpObj->PartyNumber].Index[i]) != 0 && gObjCalcDistance(lpObj, &gObj[gParty.m_PartyInfo[lpObj->PartyNumber].Index[i]]) < MAX_PARTY_DISTANCE)
+				if (OBJECT_RANGE(gParty->m_PartyInfo[lpObj->PartyNumber].Index[i]) != 0 && gObjCalcDistance(lpObj, &gObj[gParty->m_PartyInfo[lpObj->PartyNumber].Index[i]]) < MAX_PARTY_DISTANCE)
 				{
 					for (int n = 0; n < 3; n++)
 					{
 						if (lpObj->BuffSkill[n] > 0)
 						{
-							RenderPartyBuff = gSkillManager.GetSkill(lpObj, lpObj->BuffSkill[n]);
+							RenderPartyBuff = gSkillManager->GetSkill(lpObj, lpObj->BuffSkill[n]);
 
 							if (RenderPartyBuff != 0)
 							{
-								lpTarget = &gObj[gParty.m_PartyInfo[lpObj->PartyNumber].Index[i]];
+								lpTarget = &gObj[gParty->m_PartyInfo[lpObj->PartyNumber].Index[i]];
 
-								if (gEffectManager.CheckEffect(lpTarget, gSkillManager.GetSkillEffect(RenderPartyBuff->m_index)) == 0)
+								if (gEffectManager->CheckEffect(lpTarget, gSkillManager->GetSkillEffect(RenderPartyBuff->m_index)) == 0)
 								{
-									gSkillManager.UseAttackSkill(lpObj->Index, gParty.m_PartyInfo[lpObj->PartyNumber].Index[i], RenderPartyBuff);
+									gSkillManager->UseAttackSkill(lpObj->Index, gParty->m_PartyInfo[lpObj->PartyNumber].Index[i], RenderPartyBuff);
 								}
 							}
 						}
@@ -1114,7 +1126,7 @@ bool CFakeOnline::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterInd
 			continue;
 		}
 
-		if (gSkillManager.CheckSkillTarget(lpObj, lpObj->VpPlayer2[n].index, -1, lpObj->VpPlayer2[n].type) == 0)
+		if (gSkillManager->CheckSkillTarget(lpObj, lpObj->VpPlayer2[n].index, -1, lpObj->VpPlayer2[n].type) == 0)
 		{
 			continue;
 		}
@@ -1124,14 +1136,14 @@ bool CFakeOnline::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterInd
 			continue;
 		}
 
-		if (gSkillManager.CheckSkillRange(SkillNumber, lpObj->X, lpObj->Y, gObj[lpObj->VpPlayer2[n].index].X, gObj[lpObj->VpPlayer2[n].index].Y) != 0)
+		if (gSkillManager->CheckSkillRange(lpObj, SkillNumber, lpObj->X, lpObj->Y, gObj[lpObj->VpPlayer2[n].index].X, gObj[lpObj->VpPlayer2[n].index].Y) != 0)
 		{
 			(*MonsterIndex) = lpObj->VpPlayer2[n].index;
 			NearestDistance = gObjCalcDistance(lpObj, &gObj[lpObj->VpPlayer2[n].index]);
 			continue;
 		}
 
-		if (gSkillManager.CheckSkillRadio(SkillNumber, lpObj->X, lpObj->Y, gObj[lpObj->VpPlayer2[n].index].X, gObj[lpObj->VpPlayer2[n].index].Y) != 0)
+		if (gSkillManager->CheckSkillRadio(SkillNumber, lpObj->X, lpObj->Y, gObj[lpObj->VpPlayer2[n].index].X, gObj[lpObj->VpPlayer2[n].index].Y) != 0)
 		{
 			(*MonsterIndex) = lpObj->VpPlayer2[n].index;
 			NearestDistance = gObjCalcDistance(lpObj, &gObj[lpObj->VpPlayer2[n].index]);
@@ -1161,7 +1173,7 @@ bool CFakeOnline::GetTargetPlayer(LPOBJ lpObj, int SkillNumber, int* MonsterInde
 		{
 			continue;
 		}
-		if (lpObj->IsFakePartyMode >= 2 && gParty.IsParty(gObj[lpObj->VpPlayer2[n].index].PartyNumber) == 0 && (GetTickCount() >= lpObj->IsFakeSendParty + 5000) && !gObjIsSelfDefense(&gObj[lpObj->VpPlayer2[n].index], lpObj->Index))
+		if (lpObj->IsFakePartyMode >= 2 && gParty->IsParty(gObj[lpObj->VpPlayer2[n].index].PartyNumber) == 0 && (GetTickCount() >= lpObj->IsFakeSendParty + 5000) && !gObjIsSelfDefense(&gObj[lpObj->VpPlayer2[n].index], lpObj->Index))
 		{
 			if (lpObj->IsFakePartyMode == 3 && !gObj[lpObj->VpPlayer2[n].index].IsFakeOnline) { return 0; }
 			lpObj->IsFakeSendParty = GetTickCount();
@@ -1176,7 +1188,7 @@ bool CFakeOnline::GetTargetPlayer(LPOBJ lpObj, int SkillNumber, int* MonsterInde
 			NearestDistance = gObjCalcDistance(lpObj, &gObj[lpObj->VpPlayer2[n].index]);
 			continue;
 		}
-		if (gSkillManager.CheckSkillRange(SkillNumber, lpObj->X, lpObj->Y, gObj[lpObj->VpPlayer2[n].index].X, gObj[lpObj->VpPlayer2[n].index].Y) != 0)
+		if (gSkillManager->CheckSkillRange(lpObj, SkillNumber, lpObj->X, lpObj->Y, gObj[lpObj->VpPlayer2[n].index].X, gObj[lpObj->VpPlayer2[n].index].Y) != 0)
 		{
 			if (lpObj->IsFakePVPMode == 2) {
 				(*MonsterIndex) = lpObj->VpPlayer2[n].index;
@@ -1185,7 +1197,7 @@ bool CFakeOnline::GetTargetPlayer(LPOBJ lpObj, int SkillNumber, int* MonsterInde
 			continue;
 		}
 
-		if (gSkillManager.CheckSkillRadio(SkillNumber, lpObj->X, lpObj->Y, gObj[lpObj->VpPlayer2[n].index].X, gObj[lpObj->VpPlayer2[n].index].Y) != 0)
+		if (gSkillManager->CheckSkillRadio(SkillNumber, lpObj->X, lpObj->Y, gObj[lpObj->VpPlayer2[n].index].X, gObj[lpObj->VpPlayer2[n].index].Y) != 0)
 		{
 			if (lpObj->IsFakePVPMode == 2) {
 				(*MonsterIndex) = lpObj->VpPlayer2[n].index;
@@ -1221,7 +1233,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 	}
 	else
 	{*/
-	SkillRender = (lpObj->Life < ((lpObj->MaxLife * lpObj->RecoveryDrainPercent) / 100) && lpObj->RecoveryDrainOn != 0) ? gSkillManager.GetSkill(lpObj, SKILL_DRAIN_LIFE) : gSkillManager.GetSkill(lpObj, lpObj->SkillBasicID);
+	SkillRender = (lpObj->Life < ((lpObj->MaxLife * lpObj->RecoveryDrainPercent) / 100) && lpObj->RecoveryDrainOn != 0) ? gSkillManager->GetSkill(lpObj, SKILL_DRAIN_LIFE) : gSkillManager->GetSkill(lpObj, lpObj->SkillBasicID);
 	/*}*/
 
 
@@ -1256,7 +1268,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 			return;
 		}
 
-		if (gServerInfo.InSafeZone(KillUser) == true)
+		if (gServerInfo->InSafeZone(KillUser) == true)
 		{
 			//LogAdd(LOG_RED,"DEBUG GetTargetPlayer3");
 			return;
@@ -1272,7 +1284,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 		}
 		else
 		{
-			if (gSkillManager.CheckSkillRange(SkillRender->m_index, lpObj->X, lpObj->Y, gObj[KillUser].X, gObj[KillUser].Y) != 0)
+			if (gSkillManager->CheckSkillRange(lpObj, SkillRender->m_index, lpObj->X, lpObj->Y, gObj[KillUser].X, gObj[KillUser].Y) != 0)
 			{
 				caminar = 0;
 			}
@@ -1282,7 +1294,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 			}
 
-			if (gSkillManager.CheckSkillRadio(SkillRender->m_index, lpObj->X, lpObj->Y, gObj[KillUser].X, gObj[KillUser].Y) != 0)
+			if (gSkillManager->CheckSkillRadio(SkillRender->m_index, lpObj->X, lpObj->Y, gObj[KillUser].X, gObj[KillUser].Y) != 0)
 			{
 				caminar = 0;
 			}
@@ -1302,7 +1314,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 		if (atacar != 0)
 		{
-			if (lpObj->Mana < gSkillManager.GetSkillMana(SkillRender->m_index))
+			if (lpObj->Mana < gSkillManager->GetSkillMana(SkillRender->m_index))
 			{
 				//-- AUTO POTION MP PRIMERO VALIDA QUE NO ESTE MUERTO
 				PMSG_ITEM_USE_RECV pMsgMP;
@@ -1311,11 +1323,11 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 				pMsgMP.SourceSlot = 0xFF;
 
-				pMsgMP.SourceSlot = ((pMsgMP.SourceSlot == 0xFF) ? gItemManager.GetInventoryItemSlot(lpObj, GET_ITEM(14, 6), -1) : pMsgMP.SourceSlot);
+				pMsgMP.SourceSlot = ((pMsgMP.SourceSlot == 0xFF) ? gItemManager->GetInventoryItemSlot(lpObj, GET_ITEM(14, 6), -1) : pMsgMP.SourceSlot);
 
-				pMsgMP.SourceSlot = ((pMsgMP.SourceSlot == 0xFF) ? gItemManager.GetInventoryItemSlot(lpObj, GET_ITEM(14, 5), -1) : pMsgMP.SourceSlot);
+				pMsgMP.SourceSlot = ((pMsgMP.SourceSlot == 0xFF) ? gItemManager->GetInventoryItemSlot(lpObj, GET_ITEM(14, 5), -1) : pMsgMP.SourceSlot);
 
-				pMsgMP.SourceSlot = ((pMsgMP.SourceSlot == 0xFF) ? gItemManager.GetInventoryItemSlot(lpObj, GET_ITEM(14, 4), -1) : pMsgMP.SourceSlot);
+				pMsgMP.SourceSlot = ((pMsgMP.SourceSlot == 0xFF) ? gItemManager->GetInventoryItemSlot(lpObj, GET_ITEM(14, 4), -1) : pMsgMP.SourceSlot);
 
 				pMsgMP.TargetSlot = 0xFF;
 
@@ -1323,7 +1335,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 				if (INVENTORY_FULL_RANGE(pMsgMP.SourceSlot) != 0)
 				{
-					gItemManager.CGItemUseRecv(&pMsgMP, lpObj->Index);
+					gItemManager->CGItemUseRecv(&pMsgMP, lpObj->Index);
 				}
 				else
 				{
@@ -1376,11 +1388,11 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 						pMsg.y = (BYTE)gObj[KillUser].Y;
 
-						pMsg.dir = (gSkillManager.GetSkillAngle(gObj[KillUser].X, gObj[KillUser].Y, lpObj->X, lpObj->Y) * 255) / 360;
+						pMsg.dir = (gSkillManager->GetSkillAngle(gObj[KillUser].X, gObj[KillUser].Y, lpObj->X, lpObj->Y) * 255) / 360;
 
 						pMsg.dis = 0;
 
-						pMsg.angle = (gSkillManager.GetSkillAngle(lpObj->X, lpObj->Y, gObj[KillUser].X, gObj[KillUser].Y) * 255) / 360;
+						pMsg.angle = (gSkillManager->GetSkillAngle(lpObj->X, lpObj->Y, gObj[KillUser].X, gObj[KillUser].Y) * 255) / 360;
 
 #if(GAMESERVER_UPDATE>=803)
 
@@ -1398,8 +1410,8 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 						pMsg.MagicKey = 0;
 
-						gSkillManager.CGDurationSkillAttackRecv(&pMsg, lpObj->Index);
-						gAttack.Attack(lpObj, &gObj[KillUser], SkillRender, FALSE, 1, 0, FALSE, 0);
+						gSkillManager->CGDurationSkillAttackRecv(&pMsg, lpObj->Index);
+						gAttack->Attack(lpObj, &gObj[KillUser], SkillRender, FALSE, 1, 0, FALSE, 0);
 					}
 					else
 					{
@@ -1436,7 +1448,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 			return;
 		}
 
-		if (gServerInfo.InSafeZone(tObjNum) == true)
+		if (gServerInfo->InSafeZone(tObjNum) == true)
 		{
 			return;
 		}
@@ -1449,7 +1461,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 		}
 		else
 		{
-			if (gSkillManager.CheckSkillRange(SkillRender->m_index, lpObj->X, lpObj->Y, gObj[tObjNum].X, gObj[tObjNum].Y) != 0)
+			if (gSkillManager->CheckSkillRange(lpObj, SkillRender->m_index, lpObj->X, lpObj->Y, gObj[tObjNum].X, gObj[tObjNum].Y) != 0)
 			{
 				caminar = 0;
 			}
@@ -1459,7 +1471,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 			}
 
-			if (gSkillManager.CheckSkillRadio(SkillRender->m_index, lpObj->X, lpObj->Y, gObj[tObjNum].X, gObj[tObjNum].Y) != 0)
+			if (gSkillManager->CheckSkillRadio(SkillRender->m_index, lpObj->X, lpObj->Y, gObj[tObjNum].X, gObj[tObjNum].Y) != 0)
 			{
 				caminar = 0;
 			}
@@ -1478,7 +1490,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 		if (atacar != 0)
 		{
-			if (lpObj->Mana < gSkillManager.GetSkillMana(SkillRender->m_index))
+			if (lpObj->Mana < gSkillManager->GetSkillMana(SkillRender->m_index))
 			{
 				//-- AUTO POTION MP PRIMERO VALIDA QUE NO ESTE MUERTO
 				PMSG_ITEM_USE_RECV pMsgMP;
@@ -1487,11 +1499,11 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 				pMsgMP.SourceSlot = 0xFF;
 
-				pMsgMP.SourceSlot = ((pMsgMP.SourceSlot == 0xFF) ? gItemManager.GetInventoryItemSlot(lpObj, GET_ITEM(14, 6), -1) : pMsgMP.SourceSlot);
+				pMsgMP.SourceSlot = ((pMsgMP.SourceSlot == 0xFF) ? gItemManager->GetInventoryItemSlot(lpObj, GET_ITEM(14, 6), -1) : pMsgMP.SourceSlot);
 
-				pMsgMP.SourceSlot = ((pMsgMP.SourceSlot == 0xFF) ? gItemManager.GetInventoryItemSlot(lpObj, GET_ITEM(14, 5), -1) : pMsgMP.SourceSlot);
+				pMsgMP.SourceSlot = ((pMsgMP.SourceSlot == 0xFF) ? gItemManager->GetInventoryItemSlot(lpObj, GET_ITEM(14, 5), -1) : pMsgMP.SourceSlot);
 
-				pMsgMP.SourceSlot = ((pMsgMP.SourceSlot == 0xFF) ? gItemManager.GetInventoryItemSlot(lpObj, GET_ITEM(14, 4), -1) : pMsgMP.SourceSlot);
+				pMsgMP.SourceSlot = ((pMsgMP.SourceSlot == 0xFF) ? gItemManager->GetInventoryItemSlot(lpObj, GET_ITEM(14, 4), -1) : pMsgMP.SourceSlot);
 
 				pMsgMP.TargetSlot = 0xFF;
 
@@ -1499,7 +1511,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 				if (INVENTORY_FULL_RANGE(pMsgMP.SourceSlot) != 0)
 				{
-					gItemManager.CGItemUseRecv(&pMsgMP, lpObj->Index);
+					gItemManager->CGItemUseRecv(&pMsgMP, lpObj->Index);
 				}
 				else
 				{
@@ -1552,11 +1564,11 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 						pMsg.y = (BYTE)gObj[tObjNum].Y;
 
-						pMsg.dir = (gSkillManager.GetSkillAngle(gObj[tObjNum].X, gObj[tObjNum].Y, lpObj->X, lpObj->Y) * 255) / 360;
+						pMsg.dir = (gSkillManager->GetSkillAngle(gObj[tObjNum].X, gObj[tObjNum].Y, lpObj->X, lpObj->Y) * 255) / 360;
 
 						pMsg.dis = 0;
 
-						pMsg.angle = (gSkillManager.GetSkillAngle(lpObj->X, lpObj->Y, gObj[tObjNum].X, gObj[tObjNum].Y) * 255) / 360;
+						pMsg.angle = (gSkillManager->GetSkillAngle(lpObj->X, lpObj->Y, gObj[tObjNum].X, gObj[tObjNum].Y) * 255) / 360;
 
 #if(GAMESERVER_UPDATE>=803)
 
@@ -1574,8 +1586,8 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 						pMsg.MagicKey = 0;
 
-						gSkillManager.CGDurationSkillAttackRecv(&pMsg, lpObj->Index);
-						gAttack.Attack(lpObj, &gObj[tObjNum], SkillRender, FALSE, 1, 0, FALSE, 0);
+						gSkillManager->CGDurationSkillAttackRecv(&pMsg, lpObj->Index);
+						gAttack->Attack(lpObj, &gObj[tObjNum], SkillRender, FALSE, 1, 0, FALSE, 0);
 					}
 					else
 					{
@@ -1622,7 +1634,7 @@ void CFakeOnline::SendSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber) // O
 
 	pMsg.dis = 0;
 	lpObj->IsFakeTimeLag = GetTickCount();
-	gSkillManager.CGSkillAttackRecv(&pMsg, lpObj->Index);
+	gSkillManager->CGSkillAttackRecv(&pMsg, lpObj->Index);
 }
 
 void CFakeOnline::SendMultiSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber) // OK
@@ -1670,12 +1682,12 @@ void CFakeOnline::SendMultiSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber)
 
 		int index = lpObj->VpPlayer2[n].index;
 
-		if (gSkillManager.CheckSkillTarget(lpObj, index, aIndex, lpObj->VpPlayer2[n].type) == 0)
+		if (gSkillManager->CheckSkillTarget(lpObj, index, aIndex, lpObj->VpPlayer2[n].type) == 0)
 		{
 			continue;
 		}
 
-		if (gSkillManager.CheckSkillRadio(SkillNumber, lpObj->X, lpObj->Y, gObj[index].X, gObj[index].Y) == 0)
+		if (gSkillManager->CheckSkillRadio(SkillNumber, lpObj->X, lpObj->Y, gObj[index].X, gObj[index].Y) == 0)
 		{
 			continue;
 		}
@@ -1709,7 +1721,7 @@ void CFakeOnline::SendMultiSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber)
 
 	memcpy(send, &pMsg, sizeof(pMsg));
 	lpObj->IsFakeTimeLag = GetTickCount();
-	gSkillManager.CGMultiSkillAttackRecv((PMSG_MULTI_SKILL_ATTACK_RECV*)send, lpObj->Index, 0);
+	gSkillManager->CGMultiSkillAttackRecv((PMSG_MULTI_SKILL_ATTACK_RECV*)send, lpObj->Index, 0);
 }
 
 void CFakeOnline::SendDurationSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber) // OK
@@ -1736,11 +1748,11 @@ void CFakeOnline::SendDurationSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumb
 
 	pMsg.y = (BYTE)gObj[aIndex].Y;
 
-	pMsg.dir = (gSkillManager.GetSkillAngle(gObj[aIndex].X, gObj[aIndex].Y, lpObj->X, lpObj->Y) * 255) / 360;
+	pMsg.dir = (gSkillManager->GetSkillAngle(gObj[aIndex].X, gObj[aIndex].Y, lpObj->X, lpObj->Y) * 255) / 360;
 
 	pMsg.dis = 0;
 
-	pMsg.angle = (gSkillManager.GetSkillAngle(lpObj->X, lpObj->Y, gObj[aIndex].X, gObj[aIndex].Y) * 255) / 360;
+	pMsg.angle = (gSkillManager->GetSkillAngle(lpObj->X, lpObj->Y, gObj[aIndex].X, gObj[aIndex].Y) * 255) / 360;
 
 #if(GAMESERVER_UPDATE>=803)
 
@@ -1758,7 +1770,7 @@ void CFakeOnline::SendDurationSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumb
 
 	pMsg.MagicKey = 0;
 	lpObj->IsFakeTimeLag = GetTickCount();
-	gSkillManager.CGDurationSkillAttackRecv(&pMsg, lpObj->Index);
+	gSkillManager->CGDurationSkillAttackRecv(&pMsg, lpObj->Index);
 }
 
 void CFakeOnline::SendRFSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber) // OK
@@ -1773,7 +1785,7 @@ void CFakeOnline::SendRFSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber) //
 
 	Msg.index[1] = SET_NUMBERLB(aIndex);
 
-	gSkillManager.CGSkillDarkSideRecv(&Msg, lpObj->Index);
+	gSkillManager->CGSkillDarkSideRecv(&Msg, lpObj->Index);
 
 	PMSG_RAGE_FIGHTER_SKILL_ATTACK_RECV pMsg;
 
@@ -1804,7 +1816,7 @@ void CFakeOnline::SendRFSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber) //
 	pMsg.dis = 0;
 
 	//gSkillManager.CGSkillAttackRecv(&pMsg,lpObj->Index);
-	gSkillManager.CGRageFighterSkillAttackRecv(&pMsg, lpObj->Index);
+	gSkillManager->CGRageFighterSkillAttackRecv(&pMsg, lpObj->Index);
 	lpObj->IsFakeTimeLag = GetTickCount();
 	this->SendDurationSkillAttack(lpObj, aIndex, SkillNumber);
 }
@@ -1836,48 +1848,48 @@ void CFakeOnline::GuiYCParty(int aIndex, int bIndex) // OK
 	}
 #endif
 	//-- PatyLevel
-	if (gServerInfo.m_PartyRestrict == 1 && gParty.IsParty(lpTarget->PartyNumber) == 0)
+	if (gServerInfo->m_PartyRestrict == 1 && gParty->IsParty(lpTarget->PartyNumber) == 0)
 	{
 		if (gObj[aIndex].PartyNumber >= 0)
 		{
-			if (gParty.GetLevel(gObj[aIndex].PartyNumber) == TRUE)
+			if (gParty->GetLevel(gObj[aIndex].PartyNumber) == TRUE)
 			{
 				int limmaxlevel;
 				int limmaxlevel2;
 
-				if (gParty.maxlevel > gObj[bIndex].Level)
+				if (gParty->maxlevel > gObj[bIndex].Level)
 				{
-					limmaxlevel = gParty.maxlevel;
+					limmaxlevel = gParty->maxlevel;
 					limmaxlevel2 = gObj[bIndex].Level;
 				}
 				else
 				{
 					limmaxlevel = gObj[bIndex].Level;
-					limmaxlevel2 = gParty.maxlevel;
+					limmaxlevel2 = gParty->maxlevel;
 				}
 
-				if ((limmaxlevel - limmaxlevel2) > gServerInfo.m_DifferenceMaxLevelParty)
+				if ((limmaxlevel - limmaxlevel2) > gServerInfo->m_DifferenceMaxLevelParty)
 				{
-					gNotice.GCNoticeSend(lpObj->Index, 1, 0, 0, 0, 2, 0, gMessage.GetMessage(861), gServerInfo.m_DifferenceMaxLevelParty);
+					gNotice->GCNoticeSend(lpObj->Index, 1, 0, 0, 0, 2, 0, gMessage->GetMessageA(861), gServerInfo->m_DifferenceMaxLevelParty);
 					return;
 				}
 
 				int limminlevel;
 				int limminlevel2;
 
-				if (gParty.minlevel > gObj[bIndex].Level)
+				if (gParty->minlevel > gObj[bIndex].Level)
 				{
-					limminlevel = gParty.minlevel;
+					limminlevel = gParty->minlevel;
 					limminlevel2 = gObj[bIndex].Level;
 				}
 				else
 				{
 					limminlevel = gObj[bIndex].Level;
-					limminlevel2 = gParty.minlevel;
+					limminlevel2 = gParty->minlevel;
 				}
-				if ((limminlevel - limminlevel2) > gServerInfo.m_DifferenceMaxLevelParty)
+				if ((limminlevel - limminlevel2) > gServerInfo->m_DifferenceMaxLevelParty)
 				{
-					gNotice.GCNoticeSend(lpObj->Index, 1, 0, 0, 0, 2, 0, gMessage.GetMessage(861), gServerInfo.m_DifferenceMaxLevelParty);
+					gNotice->GCNoticeSend(lpObj->Index, 1, 0, 0, 0, 2, 0, gMessage->GetMessageA(861), gServerInfo->m_DifferenceMaxLevelParty);
 					return;
 				}
 			}
@@ -1895,53 +1907,54 @@ void CFakeOnline::GuiYCParty(int aIndex, int bIndex) // OK
 				sMaxMinLevel[1] = gObj[bIndex].Level;
 				sMaxMinLevel[0] = gObj[aIndex].Level;
 			}
-			if ((sMaxMinLevel[1] - sMaxMinLevel[0]) >gServerInfo.m_DifferenceMaxLevelParty)
+			if ((sMaxMinLevel[1] - sMaxMinLevel[0]) >gServerInfo->m_DifferenceMaxLevelParty)
 			{
-				gNotice.GCNoticeSend(lpObj->Index, 1, 0, 0, 0, 2, 0, gMessage.GetMessage(861), gServerInfo.m_DifferenceMaxLevelParty);
+				gNotice->GCNoticeSend(lpObj->Index, 1, 0, 0, 0, 2, 0, gMessage->GetMessageA(861), gServerInfo->m_DifferenceMaxLevelParty);
 				return;
 			}
 		}
 	}
 	//--FinPartyLevel
 
-	if (CA_MAP_RANGE(lpTarget->Map) != 0 || CC_MAP_RANGE(lpTarget->Map) != 0 || IT_MAP_RANGE(lpTarget->Map) != 0 || DA_MAP_RANGE(lpTarget->Map) != 0 || DG_MAP_RANGE(lpTarget->Map) != 0 || IG_MAP_RANGE(lpTarget->Map) != 0)
+	if (lpTarget->Map == 11 || lpTarget->Map == 18 || lpTarget->Map == 24 ||
+		lpTarget->Map == 52 || lpTarget->Map == 53) 
 	{
-		gParty.GCPartyResultSend(aIndex, 0);
+		gParty->GCPartyResultSend(aIndex, 0);
 		return;
 	}
 
 	if (OBJECT_RANGE(lpObj->PartyTargetUser) != 0 || OBJECT_RANGE(lpTarget->PartyTargetUser) != 0)
 	{
-		gParty.GCPartyResultSend(aIndex, 0);
+		gParty->GCPartyResultSend(aIndex, 0);
 		return;
 	}
 
-	if (gServerInfo.m_GensSystemPartyLock != 0 && lpObj->GensFamily != lpTarget->GensFamily)
+	if (gServerInfo->m_GensSystemPartyLock != 0 && lpObj->GensFamily != lpTarget->GensFamily)
 	{
-		gParty.GCPartyResultSend(aIndex, 6);
+		gParty->GCPartyResultSend(aIndex, 6);
 		return;
 	}
 
-	if (gParty.AutoAcceptPartyRequest(lpObj, lpTarget) != 0)
+	if (gParty->AutoAcceptPartyRequest(lpObj, lpTarget) != 0)
 	{
 		return;
 	}
 
-	if (gParty.IsParty(lpObj->PartyNumber) != 0 && gParty.IsLeader(lpObj->PartyNumber, aIndex) == 0)
+	if (gParty->IsParty(lpObj->PartyNumber) != 0 && gParty->IsLeader(lpObj->PartyNumber, aIndex) == 0)
 	{
-		gParty.GCPartyResultSend(aIndex, 0);
+		gParty->GCPartyResultSend(aIndex, 0);
 		return;
 	}
 
 	if ((lpTarget->Option & 1) == 0)
 	{
-		gParty.GCPartyResultSend(aIndex, 1);
+		gParty->GCPartyResultSend(aIndex, 1);
 		return;
 	}
 
-	if (gParty.IsParty(lpTarget->PartyNumber) != 0)
+	if (gParty->IsParty(lpTarget->PartyNumber) != 0)
 	{
-		gParty.GCPartyResultSend(aIndex, 4);
+		gParty->GCPartyResultSend(aIndex, 4);
 		return;
 	}
 
@@ -1969,139 +1982,118 @@ void CFakeOnline::GuiYCParty(int aIndex, int bIndex) // OK
 }
 
 
-#endif
 
+
+// IMPORTANT: Helper functions OUTSIDE the #if block and OUTSIDE the class
 void LoadBotPhrasesFromFile(const char* filename)
 {
-    g_BotPhrasesGeneral.clear();
-    g_BotPhrasesNear.clear();
-	g_BotPhrasesInParty.clear(); // <- LÍNEA AGREGADA: Limpiar lista de frases en party
+	g_BotPhrasesGeneral.clear();
+	g_BotPhrasesNear.clear();
+	g_BotPhrasesInParty.clear();
 
-    std::ifstream file(filename);
-    if (!file.is_open()) {
-        LogAdd(LOG_RED, "[FakeOnline] Error al abrir archivo: %s", filename);
-        return;
-    }
+	std::ifstream file(filename);
+	if (!file.is_open()) {
+		LogAdd(LOG_RED, "[FakeOnline] Error al abrir archivo: %s", filename);
+		return;
+	}
 
-    std::string line;
-    int mode = 0; // 0 = None, 1 = General, 2 = Near, 3 = InParty
-    const int MODE_GENERAL = 1;
-    const int MODE_NEAR = 2;
-    const int MODE_IN_PARTY = 3; // <- LÍNEA AGREGADA: Modo para frases en party
+	std::string line;
+	int mode = 0;
+	const int MODE_GENERAL = 1;
+	const int MODE_NEAR = 2;
+	const int MODE_IN_PARTY = 3;
 
-    while (std::getline(file, line)) {
-        if (line.empty()) continue;
-        if (line[0] == '#') {
-            if (line == "#GENERAL") mode = MODE_GENERAL;
-            else if (line == "#NEAR_REAL_PLAYER") mode = MODE_NEAR;
-			else if (line == "#IN_PARTY") mode = MODE_IN_PARTY; // <- LÍNEA AGREGADA: Reconocer sección de party
-            else mode = 0; // Unknown section
-            continue;
-        }
+	while (std::getline(file, line)) {
+		if (line.empty()) continue;
+		if (line[0] == '#') {
+			if (line == "#GENERAL") mode = MODE_GENERAL;
+			else if (line == "#NEAR_REAL_PLAYER") mode = MODE_NEAR;
+			else if (line == "#IN_PARTY") mode = MODE_IN_PARTY;
+			else mode = 0;
+			continue;
+		}
 
-        switch (mode) {
-            case MODE_GENERAL: 
-                g_BotPhrasesGeneral.push_back(line); 
-                break;
-            case MODE_NEAR: 
-                g_BotPhrasesNear.push_back(line); 
-                break;
-            case MODE_IN_PARTY: // <- LÍNEA AGREGADA: Añadir frase a la lista de party
-                g_BotPhrasesInParty.push_back(line); 
-                break;
-            default: 
-                // Optionally log unknown lines or lines without a mode set
-                break;
-        }
-    }
+		switch (mode) {
+		case MODE_GENERAL:
+			g_BotPhrasesGeneral.push_back(line);
+			break;
+		case MODE_NEAR:
+			g_BotPhrasesNear.push_back(line);
+			break;
+		case MODE_IN_PARTY:
+			g_BotPhrasesInParty.push_back(line);
+			break;
+		}
+	}
 
-    file.close();
-    LogAdd(LOG_BLUE, "[FakeOnline] Frases cargadas: General=%d, Cerca=%d, EnParty=%d", 
-    g_BotPhrasesGeneral.size(), g_BotPhrasesNear.size(), g_BotPhrasesInParty.size());
+	file.close();
+	LogAdd(LOG_BLUE, "[FakeOnline] Frases cargadas: General=%d, Cerca=%d, EnParty=%d",
+		g_BotPhrasesGeneral.size(), g_BotPhrasesNear.size(), g_BotPhrasesInParty.size());
 }
 
-// CORREGIDA: GetRandomBotPhrase
 std::string GetRandomBotPhrase(bool realPlayerNearby, bool inParty)
 {
-    const std::vector<std::string>* pSelectedList = nullptr; // Usar un puntero a la lista seleccionada
+	const std::vector<std::string>* pSelectedList = nullptr;
 
-    // Prioridad 1: Frases si está en party (y hay frases de party)
-    if (inParty && !g_BotPhrasesInParty.empty()) {
-        pSelectedList = &g_BotPhrasesInParty;
-    }
-    // Prioridad 2: Frases si hay un jugador real cerca (y hay frases para "cerca")
-    else if (realPlayerNearby && !g_BotPhrasesNear.empty()) {
-        pSelectedList = &g_BotPhrasesNear;
-    }
-    // Prioridad 3: Frases generales si las otras condiciones no se cumplen o sus listas están vacías
-    else if (!g_BotPhrasesGeneral.empty()) {
-        pSelectedList = &g_BotPhrasesGeneral;
-    }
-    // Fallback: si se iba a usar "Near" pero estaba vacía, e "InParty" no aplicaba, e "General" tiene frases.
-    // Esta condición extra es para el caso donde realPlayerNearby=true, g_BotPhrasesNear está vacía,
-    // inParty=false (o g_BotPhrasesInParty vacía), pero g_BotPhrasesGeneral sí tiene frases.
-    else if (realPlayerNearby && g_BotPhrasesNear.empty() && (inParty == false || g_BotPhrasesInParty.empty()) && !g_BotPhrasesGeneral.empty()) {
-         pSelectedList = &g_BotPhrasesGeneral;
-    }
+	if (inParty && !g_BotPhrasesInParty.empty()) {
+		pSelectedList = &g_BotPhrasesInParty;
+	}
+	else if (realPlayerNearby && !g_BotPhrasesNear.empty()) {
+		pSelectedList = &g_BotPhrasesNear;
+	}
+	else if (!g_BotPhrasesGeneral.empty()) {
+		pSelectedList = &g_BotPhrasesGeneral;
+	}
 
+	if (pSelectedList == nullptr || pSelectedList->empty()) {
+		return "";
+	}
 
-    if (pSelectedList == nullptr || pSelectedList->empty()) {
-        return ""; // No hay frases disponibles
-    }
-
-    int index = rand() % pSelectedList->size();
-    return (*pSelectedList)[index]; // Usar el puntero para acceder a la lista
+	int index = rand() % pSelectedList->size();
+	return (*pSelectedList)[index];
 }
 
+// AttemptRandomBotComment - CLASS MEMBER METHOD (inside #if block)
+#if USE_FAKE_ONLINE == TRUE
 // CORREGIDA: AttemptRandomBotComment
 
 void CFakeOnline::AttemptRandomBotComment(int aIndex)
 {
-    if (!USE_FAKE_ONLINE) return; // Verifica si la característica está habilitada
+	LPOBJ lpObj = &gObj[aIndex];
 
-    LPOBJ lpObj = &gObj[aIndex]; // Obtiene el puntero al objeto
+	if (lpObj->Connected != OBJECT_ONLINE || lpObj->Type != OBJECT_USER)
+		return;
 
-    // Verificaciones básicas para el objeto
-    if (lpObj->Connected != OBJECT_ONLINE || lpObj->Type != OBJECT_USER)
-        return;
+	OFFEXP_DATA* pBotData = this->GetOffExpInfo(lpObj);
+	if (pBotData == nullptr)
+		return;
 
-    // Verifica si es un bot gestionado por este sistema
-    OFFEXP_DATA* pBotData = this->GetOffExpInfo(lpObj);
-    if (pBotData == nullptr) // Si no es un bot con datos de FakeOnline, no hacer nada
-        return;
+	bool realPlayerNearby = false;
+	for (int i = 0; i < MAX_VIEWPORT; i++) {
+		int idx = lpObj->VpPlayer2[i].index;
+		if (OBJMAX_RANGE(idx) && gObj[idx].Type == OBJECT_USER && gObj[idx].IsFakeOnline == 0) {
+			realPlayerNearby = true;
+			break;
+		}
+	}
 
-    // Determina si un jugador real está cerca
-    bool realPlayerNearby = false;
-    for (int i = 0; i < MAX_VIEWPORT; i++) {
-        int idx = lpObj->VpPlayer2[i].index;
-        if (OBJMAX_RANGE(idx) && gObj[idx].Type == OBJECT_USER && gObj[idx].IsFakeOnline == 0) { // Condición de jugador real
-            realPlayerNearby = true;
-            break;
-        }
-    }
-    
-    // Determina si el bot está en un party
-    bool isInParty = (lpObj->PartyNumber >= 0); // Declaración de isInParty
+	bool isInParty = (lpObj->PartyNumber >= 0);
+	const int COMMENT_COOLDOWN_MS = 120000;
+	int probability = isInParty ? 20 : 10;
 
-    const int COMMENT_COOLDOWN_MS = 120000; // Constante para el cooldown
-    
-    // ----> ESTA ES LA LÍNEA CRUCIAL PARA 'probability' <----
-    // Declaración de 'probability' usando 'isInParty'
-    int probability = isInParty ? 20 : 10; 
-    // ----> ASEGÚRATE DE QUE ESTA LÍNEA EXISTA Y ESTÉ ESCRITA CORRECTAMENTE <----
+	if ((GetTickCount() - this->m_dwLastCommentTick[aIndex]) >= COMMENT_COOLDOWN_MS &&
+		(rand() % 100) < probability) {
+		std::string phrase = GetRandomBotPhrase(realPlayerNearby, isInParty);
 
-    // Uso de 'probability' en la condición del if
-    // La línea 2083 que mencionas probablemente sea esta línea 'if':
-    if ((GetTickCount() - this->m_dwLastCommentTick[aIndex]) >= COMMENT_COOLDOWN_MS && (rand() % 100) < probability) {
-        // Obtiene la frase usando el estado de realPlayerNearby e isInParty
-        std::string phrase = GetRandomBotPhrase(realPlayerNearby, isInParty); 
-        
-        if (!phrase.empty()) {
-            char msg[256];
-            strncpy_s(msg, phrase.c_str(), _TRUNCATE); 
-            if (gCommandManager.CommandPost(lpObj, msg)) { 
-                this->m_dwLastCommentTick[aIndex] = GetTickCount();
-            }
-        }
-    }
-}
+		if (!phrase.empty()) {
+			char msg[256];
+			strncpy_s(msg, phrase.c_str(), _TRUNCATE);
+			// FIX: Changed from CCommandManager.CommandPost to gCommandManager.CommandPost
+			gCommandManager->CommandPost(lpObj, msg);
+				this->m_dwLastCommentTick[aIndex] = GetTickCount();
+			}
+		}
+	}
+
+#endif
+#endif

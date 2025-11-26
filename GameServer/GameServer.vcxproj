@@ -172,6 +172,7 @@
     <ClInclude Include="MapServerManager.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="DamageTable.h" />
+    <ClInclude Include="MemScript.h" />
     <ClInclude Include="MonsterMove.h" />
     <ClInclude Include="MemoryAllocator.h" />
     <ClInclude Include="MemoryAllocatorInfo.h" />
@@ -385,6 +386,7 @@
     <ClCompile Include="MapServerManager.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="DamageTable.cpp" />
+    <ClCompile Include="MemScript.cpp" />
     <ClCompile Include="MonsterMove.cpp" />
     <ClCompile Include="MemoryAllocator.cpp" />
     <ClCompile Include="MemoryAllocatorInfo.cpp" />

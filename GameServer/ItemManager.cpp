@@ -4381,3 +4381,4 @@ void CItemManager::GDGetItemSerialSend(int aIndex,int index,int map,int x,int y)
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg,pMsg.header.size);
 }
+

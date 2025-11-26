@@ -249,3 +249,19 @@ bool CGate::GetGate(int index,int* gate,int* map,int* x,int* y,int* dir,int* lev
 
 	return 0;
 }
+
+bool CGate::MapIsInGate(LPOBJ lpObj, int index) // OK
+{
+	GATE_INFO info;
+
+	if (this->GetInfo(index, &info) == 0)
+	{
+		return 0;
+	}
+
+	if (lpObj->Map != info.Map)
+	{
+		return 0;
+	}
+	return 1;
+}

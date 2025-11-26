@@ -126,8 +126,12 @@ public:
 	void GCPartyListSend(int index);
 	void GCPartyDelMemberSend(int aIndex);
 	void GCPartyLifeSend(int index);
+	bool GetLevel(int partyNumber);
+	
 public:
 	int m_PartyCount;
+	int maxlevel;
+	int minlevel;
 	PARTY_INFO m_PartyInfo[MAX_OBJECT];
 };
 

@@ -48,6 +48,7 @@ public:
 	void ReadHackInfo(char* section,char* path);
 	void ReadItemInfo(char* section,char* path);
 	void ReadSkillInfo(char* section,char* path);
+	bool InSafeZone(int aIndex);
 public:
 	char m_ServerName[32];
 	int m_ServerCode;
@@ -975,6 +976,8 @@ public:
 	int m_PotionOfSoulConstA;
 	int m_PotionOfSoulConstB;
 	int m_PotionOfSoulTimeConstA;
+	int m_PartyRestrict; //Custom Activate Party Level Restrict
+	int m_DifferenceMaxLevelParty; //Custom Max level party Diferencia Restric
 	CScript m_CalcCharacter;
 };
 

@@ -5,9 +5,9 @@
 #define IDC_MYICON                      0
 //============================================================
 //FakeOnline_EMU
-#define ID_FAKEONLINE_RELOADDATA		3
-#define ID_FAKEONLINE_ADDFAKEONLINE		4
-#define ID_FAKEONLINE_DELFAKEONLINE		5
+#define ID_FAKEONLINE_RELOADDATA		111
+#define ID_FAKEONLINE_ADDFAKEONLINE		112
+#define ID_FAKEONLINE_DELFAKEONLINE		113
 //============================================================
 #define IDD_ABOUTBOX                    100
 #define IDS_APP_TITLE                   101

@@ -376,6 +376,19 @@ void RenderMenu(HWND hWnd) // OK
 	AppendMenu(hReload,MF_STRING,IDM_RELOAD_RELOADSHOP,"Reload Shop");
 	AppendMenu(hReload,MF_STRING,IDM_RELOAD_RELOADSKILL,"Reload Skill");
 	AppendMenu(hReload,MF_STRING,IDM_RELOAD_RELOADUTIL,"Reload Util");
+
+	// ============================================================
+	// ADD FAKEONLINE MENU HERE
+#if USE_FAKE_ONLINE == TRUE
+	HMENU hFakeOnline = CreateMenu();
+
+	AppendMenu(hMenu, MF_POPUP, (UINT_PTR)hFakeOnline, "&IA");
+
+	AppendMenu(hFakeOnline, MF_STRING, ID_FAKEONLINE_RELOADDATA, "Recargar IA");
+	AppendMenu(hFakeOnline, MF_STRING, ID_FAKEONLINE_ADDFAKEONLINE, "Agregar IA");
+	AppendMenu(hFakeOnline, MF_STRING, ID_FAKEONLINE_DELFAKEONLINE, "Borrar IA");
+#endif
+	// ============================================================
 	
 	HMENU hTool = CreateMenu();
 	

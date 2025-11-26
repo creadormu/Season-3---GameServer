@@ -3505,3 +3505,34 @@ void CServerInfo::ReadSkillInfo(char* section,char* path) // OK
 
 	this->m_PhysiDamageImmunityTimeConstA = GetPrivateProfileInt(section,"PhysiDamageImmunityTimeConstA",0,path);
 }
+
+bool CServerInfo::InSafeZone(int aIndex)
+{
+	if (OBJMAX_RANGE(aIndex) == FALSE)
+	{
+		return false;
+	}
+
+	LPOBJ lpUser = &gObj[aIndex];
+
+	if (lpUser->Connected < OBJECT_ONLINE)
+	{
+		return false;
+	}
+
+	int map = lpUser->Map;
+
+	if (MAP_RANGE(map) == FALSE)
+	{
+		return false;
+	}
+
+	BYTE attr = gMap[map].GetAttr(lpUser->X, lpUser->Y);
+
+	if ((attr & 1) == 1)
+	{
+		return true;
+	}
+
+	return false;
+}
