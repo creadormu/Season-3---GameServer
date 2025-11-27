@@ -28,6 +28,7 @@
 #include "SocketManagerUdp.h"
 #include "ThemidaSDK.h"
 #include "Util.h"
+#include "OfflineMode.h"
 #include "FakeOnline.h"
 
 HINSTANCE hInst;

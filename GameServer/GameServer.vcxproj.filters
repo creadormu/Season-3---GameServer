@@ -708,6 +708,7 @@
     </ClInclude>
     <ClInclude Include="FakeOnline.h" />
     <ClInclude Include="MemScript.h" />
+    <ClInclude Include="OfflineMode.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ServerDisplayer.cpp">
@@ -1338,6 +1339,9 @@
       <Filter>Others</Filter>
     </ClCompile>
     <ClCompile Include="MemScript.cpp">
+      <Filter>Others</Filter>
+    </ClCompile>
+    <ClCompile Include="OfflineMode.cpp">
       <Filter>Others</Filter>
     </ClCompile>
   </ItemGroup>

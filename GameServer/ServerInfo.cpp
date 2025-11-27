@@ -109,6 +109,7 @@
 #include "SkillUseArea.h"
 #include "Util.h"
 #include "WingOption.h"
+#include "OfflineMode.h"
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction

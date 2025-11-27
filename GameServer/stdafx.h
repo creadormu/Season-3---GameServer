@@ -22,7 +22,7 @@
 #define GAMESERVER_SHOP 0
 #endif
 
-
+#define OFFLINE_MODE				1
 #define USE_FAKE_ONLINE         1
 // System Include
 #include <windows.h>

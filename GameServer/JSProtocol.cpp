@@ -13,6 +13,7 @@
 #include "ObjectManager.h"
 #include "ServerInfo.h"
 #include "Util.h"
+#include "OfflineMode.h"
 #include "FakeOnline.h"
 
 void JoinServerProtocolCore(BYTE head,BYTE* lpMsg,int size) // OK

@@ -212,6 +212,7 @@
     <ClInclude Include="Notice.h" />
     <ClInclude Include="NpcTalk.h" />
     <ClInclude Include="ObjectManager.h" />
+    <ClInclude Include="OfflineMode.h" />
     <ClInclude Include="PacketManager.h" />
     <ClInclude Include="Party.h" />
     <ClInclude Include="Path.h" />
@@ -426,6 +427,7 @@
     <ClCompile Include="Notice.cpp" />
     <ClCompile Include="NpcTalk.cpp" />
     <ClCompile Include="ObjectManager.cpp" />
+    <ClCompile Include="OfflineMode.cpp" />
     <ClCompile Include="PacketManager.cpp" />
     <ClCompile Include="Party.cpp" />
     <ClCompile Include="Path.cpp" />

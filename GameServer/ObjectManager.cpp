@@ -67,6 +67,7 @@
 #include "SkillManager.h"
 #include "Trade.h"
 #include "Util.h"
+#include "OfflineMode.h"
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction

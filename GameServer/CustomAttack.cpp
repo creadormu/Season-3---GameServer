@@ -158,6 +158,9 @@ void CCustomAttack::ReadCustomAttackInfo(char* section,char* path) // OK
 
 	this->m_CustomAttackMapZone = GetPrivateProfileInt(section,"CustomAttackMapZone",0,path);
 
+	this->m_CustomAttackOfflineGPGain = GetPrivateProfileInt(section, "CustomAttackOfflineGPGain", 0, path);
+
+
 	if(this->m_CustomAttackMapZone != -1)
 	{
 		memset(this->m_CustomAttackMapList,0,sizeof(this->m_CustomAttackMapList));
@@ -1110,6 +1113,46 @@ void CCustomAttack::CustomAttackMultilAttack(LPOBJ lpObj,int bIndex,int skill) /
 
 	gSkillManager->CGMultiSkillAttackRecv((PMSG_MULTI_SKILL_ATTACK_RECV*)send,lpObj->Index,0);
 }
+
+bool CCustomAttack::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterIndex) // OK
+{
+	int NearestDistance = 100;
+
+	for (int n = 0; n < MAX_VIEWPORT; n++)
+	{
+		if (lpObj->VpPlayer2[n].state == VIEWPORT_NONE || OBJECT_RANGE(lpObj->VpPlayer2[n].index) == 0 || lpObj->VpPlayer2[n].type != OBJECT_MONSTER)
+		{
+			continue;
+		}
+
+		if (gSkillManager->CheckSkillTarget(lpObj, lpObj->VpPlayer2[n].index, -1, lpObj->VpPlayer2[n].type) == 0)
+		{
+			continue;
+		}
+
+		if (gObjCalcDistance(lpObj, &gObj[lpObj->VpPlayer2[n].index]) >= NearestDistance)
+		{
+			continue;
+		}
+
+		if (gSkillManager->CheckSkillRange(lpObj, SkillNumber, lpObj->X, lpObj->Y, gObj[lpObj->VpPlayer2[n].index].X, gObj[lpObj->VpPlayer2[n].index].Y) != 0)
+		{
+			(*MonsterIndex) = lpObj->VpPlayer2[n].index;
+			NearestDistance = gObjCalcDistance(lpObj, &gObj[lpObj->VpPlayer2[n].index]);
+			continue;
+		}
+
+		if (gSkillManager->CheckSkillRadio(SkillNumber, lpObj->X, lpObj->Y, gObj[lpObj->VpPlayer2[n].index].X, gObj[lpObj->VpPlayer2[n].index].Y) != 0)
+		{
+			(*MonsterIndex) = lpObj->VpPlayer2[n].index;
+			NearestDistance = gObjCalcDistance(lpObj, &gObj[lpObj->VpPlayer2[n].index]);
+			continue;
+		}
+	}
+
+	return ((NearestDistance == 100) ? 0 : 1);
+}
+
 
 void CCustomAttack::CustomAttackDurationlAttack(LPOBJ lpObj,int bIndex,int skill) // OK
 {

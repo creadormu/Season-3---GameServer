@@ -13,6 +13,7 @@
 #include "SocketManagerUdp.h"
 #include "User.h"
 #include "Util.h"
+#include "OfflineMode.h"
 #include "FakeOnline.h"
 
 CConnection gJoinServerConnection;

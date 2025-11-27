@@ -72,6 +72,7 @@ public:
 	void CustomAttackClose(int aIndex);
 	void CommandCustomAttack(LPOBJ lpObj,char* arg);
 	void CommandCustomAttackOffline(LPOBJ lpObj);
+	bool GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterIndex);
 	void CustomAttackAutoPotion(LPOBJ lpObj);
 	void CustomAttackAutoRepair(LPOBJ lpObj);
 	void CustomAttackAutoReload(LPOBJ lpObj);
@@ -103,6 +104,7 @@ public:
 	int m_CustomAttackOfflineBuffEnable[MAX_ACCOUNT_LEVEL];
 	int m_CustomAttackOfflineKeepEnable[MAX_ACCOUNT_LEVEL];
 	int m_CustomAttackOfflineMaxTimeLimit[MAX_ACCOUNT_LEVEL];
+	int m_CustomAttackOfflineGPGain;
 };
 
 #define gCustomAttack SingNull(CCustomAttack)

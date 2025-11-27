@@ -78,6 +78,7 @@
 #include "Util.h"
 #include "Viewport.h"
 #include "Warehouse.h"
+#include "OfflineMode.h"
 #include "FakeOnline.h"
 
 

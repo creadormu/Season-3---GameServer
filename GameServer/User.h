@@ -10,9 +10,13 @@
 #define MAX_OBJECT 10000
 #define MAX_OBJECT_MONSTER 8000
 #define MAX_OBJECT_USER 1000
+#define MAX_OBJECT_USER_AND_BOTS 2000 //MC bot
+#define MAX_OBJECT_BOTS 200
 
+#define OBJECT_START_BOTS 0
 #define OBJECT_START_MONSTER 0
 #define OBJECT_START_USER (MAX_OBJECT-MAX_OBJECT_USER)
+#define OBJECT_START_USER_AND_BOTS (MAX_OBJECT-MAX_OBJECT_USER_AND_BOTS) // MC EMPIEZA DESDE LOS USER SIGE POR LOS BOT Y TERMINA
 
 #define MAX_SELF_DEFENSE 5
 #define MAX_HIT_DAMAGE 40
@@ -34,6 +38,11 @@
 #define GET_MAX_RESISTANCE(x,y,z) (((((x)>(y))?(x):(y))>(z))?(((x)>(y))?(x):(y)):(z))
 #define GET_MAX_WORD_VALUE(x) (((x)>65000)?65000:((WORD)(x)))
 #define CHECK_RANGE(x,y) (((x)<0)?0:((x)>=(y))?0:1)
+#define OBJECT_BOTS_RANGE(x) (((x)<OBJECT_START_BOTS)?0:((x)>=OBJECT_BOTS)?0:1)
+
+//MCS
+#define OBJ_STARTUSERINDEX			(MAX_OBJECT-MAX_OBJECT_USER)
+#define MAX_TYPE_PLAYER_BOTS 7
 
 enum eObjectAuthority
 {
@@ -904,11 +913,14 @@ struct OBJECTSTRUCT
 	DWORD TradeOkTime;
 	DWORD PotionTime;
 	DWORD ComboTime;
+	DWORD PcPointPointTime;
 	DWORD HPAutoRecuperationTime;
 	DWORD MPAutoRecuperationTime;
 	DWORD BPAutoRecuperationTime;
 	DWORD SDAutoRecuperationTime;
 	DWORD OnlineRewardTime;
+	DWORD CashShopGoblinPointTime;
+
 	int Reset;
 	int LoadGens;
 	int GensFamily;
