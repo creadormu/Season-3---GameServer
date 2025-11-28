@@ -11,6 +11,7 @@
 #define OFFLINEMODE_DBMAX		1107
 #define OFFLINEMODE_DBPRICE		1108
 
+
 struct PBMSG_HEAD2
 {
 public:
@@ -158,6 +159,8 @@ public:
 	void OnAttackSecondProcHelper(LPOBJ lpObj); // OK
 	void OnHelperpAlreadyConnected(LPOBJ lpObj); // OK
 	void regresar(int aIndex);
+	
+
 };
 // ----------------------------------------------------------------------------------------------
 extern OfflineMode g_OfflineMode;

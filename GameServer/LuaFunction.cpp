@@ -30,6 +30,7 @@
 #include "Util.h"
 #include "Viewport.h"
 
+
 static int sentinel_ = 0;
 
 void InitLuaFunction(lua_State* L) // OK

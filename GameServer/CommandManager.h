@@ -272,4 +272,6 @@ private:
 	std::map<int,COMMAND_LIST_INFO> m_CommandListInfo;
 };
 
+
 #define gCommandManager SingNull(CCommandManager)
+

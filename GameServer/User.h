@@ -1094,35 +1094,35 @@ struct OBJECTSTRUCT
 	bool	m_OfflineSocket;
 	int		m_OfflineMode;
 	int		MuOffHelperTime;
-	/*+172*/	DWORD	HuntingRange;
-	/*+176*/	BYTE	RecoveryPotionOn;
-	/*+177*/	BYTE	RecoveryPotionPercent;
-	/*+178*/	BYTE	RecoveryHealOn;			//-> CLASS_ELF
-	/*+179*/	BYTE	RecoveryHealPercent;	//-> CLASS_ELF
-	/*+180*/	BYTE	RecoveryDrainOn;		//-> CLASS_SUMMONER
-	/*+181*/	BYTE	RecoveryDrainPercent;	//-> CLASS_SUMMONER
-	/*+182*/	BYTE	DistanceLongOn;
-	/*+183*/	BYTE	DistanceReturnOn;
-	/*+184*/	DWORD	DistanceMin;
-	/*+188*/	DWORD	SkillBasicID;
-	/*+240*/	BYTE	ComboOn;				//-> CLASS_KNIGHT
-	/*+241*/	BYTE	PartyModeOn;
-	/*+242*/	BYTE	PartyModeHealOn;		//-> CLASS_ELF
-	/*+243*/	BYTE	PartyModeHealPercent;	//-> CLASS_ELF
-	/*+244*/	BYTE	PartyModeBuffOn;
-	/*+260*/	BYTE	BuffOn;
-	/*+264*/	DWORD	BuffSkill[3];
-	/*+288*/	DWORD	ObtainRange;
-	/*+292*/	BYTE	ObtainRepairOn;
-	/*+293*/	BYTE	ObtainPickNear;
-	/*+294*/	BYTE	ObtainPickSelected;
-	/*+295*/	BYTE	ObtainPickJewels;
-	/*+296*/	BYTE	ObtainPickAncient;
-	/*+297*/	BYTE	ObtainPickMoney;
-	/*+298*/	BYTE	ObtainPickExcellent;
-	/*+299*/	BYTE	ObtainPickExtra;
+	DWORD	HuntingRange;
+	BYTE	RecoveryPotionOn;
+	BYTE	RecoveryPotionPercent;
+	BYTE	RecoveryHealOn;			//-> CLASS_ELF
+	BYTE	RecoveryHealPercent;	//-> CLASS_ELF
+	BYTE	RecoveryDrainOn;		//-> CLASS_SUMMONER
+	BYTE	RecoveryDrainPercent;	//-> CLASS_SUMMONER
+	BYTE	DistanceLongOn;
+	BYTE	DistanceReturnOn;
+	DWORD	DistanceMin;
+	DWORD	SkillBasicID;
+	BYTE	ComboOn;				//-> CLASS_KNIGHT
+	BYTE	PartyModeOn;
+	BYTE	PartyModeHealOn;		//-> CLASS_ELF
+	BYTE	PartyModeHealPercent;	//-> CLASS_ELF
+	BYTE	PartyModeBuffOn;
+	BYTE	BuffOn;
+	DWORD	BuffSkill[3];
+	DWORD	ObtainRange;
+	BYTE	ObtainRepairOn;
+	BYTE	ObtainPickNear;
+	BYTE	ObtainPickSelected;
+	BYTE	ObtainPickJewels;
+	BYTE	ObtainPickAncient;
+	BYTE	ObtainPickMoney;
+	BYTE	ObtainPickExcellent;
+	BYTE	ObtainPickExtra;
 	int		ObtainPickExtraCount;
-	/*+300*/	char	ObtainPickItemList[12][16];
+	char	ObtainPickItemList[12][16];
 
 	int orderskill;
 
