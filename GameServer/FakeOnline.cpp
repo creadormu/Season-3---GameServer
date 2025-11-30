@@ -430,9 +430,17 @@ void FakeAnimationMove(int aIndex, int x, int y, bool dixa)
 {
 	LPOBJ lpObj = &gObj[aIndex];
 
-	int map_num = gObj[aIndex].Map;
+	if (OBJECT_RANGE(aIndex) == 0)
+	{
+		return;
+	}
 
-	BYTE path[8];
+	int map_num = lpObj->Map;
+
+	if (MAP_RANGE(map_num) == 0)
+	{
+		return;
+	}
 
 	if (lpObj->RegenOk > 0)
 	{
@@ -449,11 +457,6 @@ void FakeAnimationMove(int aIndex, int x, int y, bool dixa)
 		return;
 	}
 
-	/*if ((GetTickCount() - lpObj->LastMoveTime) < 100)
-	{
-	return;
-	}*/
-
 	if (gEffectManager->CheckStunEffect(lpObj) != 0 || gEffectManager->CheckImmobilizeEffect(lpObj) != 0)
 	{
 		return;
@@ -465,119 +468,61 @@ void FakeAnimationMove(int aIndex, int x, int y, bool dixa)
 		gNotice->GCNoticeSend(lpObj->Index, 1, 0, 0, 0, 0, 0, gMessage->GetMessageA(272));
 	}
 
-	lpObj->Dir = path[0] >> 4;
+	// Store old position for map attribute update
+	int oldX = lpObj->X;
+	int oldY = lpObj->Y;
+
+	// Simple direct teleport for bots - no path calculation needed
+	lpObj->Dir = 0;
 	lpObj->Rest = 0;
 	lpObj->PathCur = 0;
-	lpObj->PathCount = path[0] & 0x0F;
+	lpObj->PathCount = 0;
 	lpObj->LastMoveTime = GetTickCount();
 
 	memset(lpObj->PathX, 0, sizeof(lpObj->PathX));
-
 	memset(lpObj->PathY, 0, sizeof(lpObj->PathY));
-
 	memset(lpObj->PathOri, 0, sizeof(lpObj->PathOri));
 
 	lpObj->TX = x;
 	lpObj->TY = y;
-	lpObj->PathCur = ((lpObj->PathCount > 0) ? 1 : 0);
-	lpObj->PathCount = ((lpObj->PathCount > 0) ? (lpObj->PathCount + 1) : lpObj->PathCount);
 	lpObj->PathStartEnd = 1;
 	lpObj->PathX[0] = x;
 	lpObj->PathY[0] = y;
 	lpObj->PathDir[0] = lpObj->Dir;
 
-	for (int n = 1; n < lpObj->PathCount; n++)
-	{
-		if ((n % 2) == 0)
-		{
-			lpObj->TX = lpObj->PathX[n - 1] + RoadPathTable[((path[((n + 1) / 2)] & 0x0F) * 2) + 0];
-			lpObj->TY = lpObj->PathY[n - 1] + RoadPathTable[((path[((n + 1) / 2)] & 0x0F) * 2) + 1];
-			lpObj->PathX[n] = lpObj->PathX[n - 1] + RoadPathTable[((path[((n + 1) / 2)] & 0x0F) * 2) + 0];
-			lpObj->PathY[n] = lpObj->PathY[n - 1] + RoadPathTable[((path[((n + 1) / 2)] & 0x0F) * 2) + 1];
-			lpObj->PathOri[n - 1] = path[((n + 1) / 2)] & 0x0F;
-			lpObj->PathDir[n + 0] = path[((n + 1) / 2)] & 0x0F;
-		}
-		else
-		{
-			lpObj->TX = lpObj->PathX[n - 1] + RoadPathTable[((path[((n + 1) / 2)] / 0x10) * 2) + 0];
-			lpObj->TY = lpObj->PathY[n - 1] + RoadPathTable[((path[((n + 1) / 2)] / 0x10) * 2) + 1];
-			lpObj->PathX[n] = lpObj->PathX[n - 1] + RoadPathTable[((path[((n + 1) / 2)] / 0x10) * 2) + 0];
-			lpObj->PathY[n] = lpObj->PathY[n - 1] + RoadPathTable[((path[((n + 1) / 2)] / 0x10) * 2) + 1];
-			lpObj->PathOri[n - 1] = path[((n + 1) / 2)] / 0x10;
-			lpObj->PathDir[n + 0] = path[((n + 1) / 2)] / 0x10;
-		}
-	}
-	gMap[lpObj->Map].DelStandAttr(lpObj->OldX, lpObj->OldY);
-	if (dixa == true) {
-		int RandX = rand() % 3 + 1;
-		int RandY = rand() % 3 + 1;
-		BYTE wall = 0;
-		if (x > lpObj->X) {
-			// WITH THIS:
-			BYTE attr = gMap[lpObj->Map].GetAttr(lpObj->X + RandX, lpObj->Y);
-			if ((attr & 1) == 0) lpObj->X += RandX;
-		}
-		else if (x <  lpObj->X) {
-			// WITH THIS:
-			BYTE attr = gMap[lpObj->Map].GetAttr(lpObj->X + RandX, lpObj->Y);
-			if ((attr & 1) == 0) lpObj->X += RandX;
-		}
-		if (y > lpObj->Y) {
-			// WITH THIS:
-			BYTE attr = gMap[lpObj->Map].GetAttr(lpObj->X + RandY, lpObj->Y);
-			if ((attr & 1) == 0) lpObj->X += RandY;
-		}
-		else if (y <  lpObj->Y) {
-			BYTE attr = gMap[lpObj->Map].GetAttr(lpObj->X - RandY, lpObj->Y);
-			if ((attr & 1) == 0) lpObj->X += RandY;
-		}
+	gMap[map_num].DelStandAttr(oldX, oldY);
 
-	}
-	else {
-		lpObj->X = x;
-		lpObj->Y = y;
-	}
-
-	//lpObj->Y = y;
-	lpObj->TX = lpObj->TX;
-	lpObj->TY = lpObj->TY;
-	lpObj->OldX = lpObj->TX;
-	lpObj->OldY = lpObj->TY;
+	// Set new position
+	lpObj->X = x;
+	lpObj->Y = y;
+	lpObj->TX = x;
+	lpObj->TY = y;
+	lpObj->OldX = x;
+	lpObj->OldY = y;
 	lpObj->ViewState = 0;
 
-	gMap[lpObj->Map].SetStandAttr(lpObj->TX, lpObj->TY);
+	gMap[map_num].SetStandAttr(x, y);
 
+	// Send movement packet to players in viewport
 	PMSG_MOVE_SEND pMsg;
 
 	pMsg.header.set(PROTOCOL_CODE1, sizeof(pMsg));
 
 	pMsg.index[0] = SET_NUMBERHB(lpObj->Index);
-
 	pMsg.index[1] = SET_NUMBERLB(lpObj->Index);
 
-	pMsg.x = (BYTE)lpObj->TX;
-
-	pMsg.y = (BYTE)lpObj->TY;
-
+	pMsg.x = (BYTE)x;
+	pMsg.y = (BYTE)y;
 	pMsg.dir = lpObj->Dir << 4;
-
-	//if (!gObjPositionCheck(lpObj))
-	{
-		lpObj->PathCur = 0;
-		lpObj->PathCount = 0;
-		lpObj->TX = lpObj->X;
-		lpObj->TY = lpObj->Y;
-		pMsg.x = (BYTE)lpObj->X;
-		pMsg.y = (BYTE)lpObj->Y;
-	}
 
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
-		if (lpObj->VpPlayer2[n].type == OBJECT_USER)
+		if (lpObj->VpPlayer2[n].type == OBJECT_USER && lpObj->VpPlayer2[n].state != VIEWPORT_NONE)
 		{
-			if (lpObj->VpPlayer2[n].state != OBJECT_EMPTY && lpObj->VpPlayer2[n].state != OBJECT_DIECMD && lpObj->VpPlayer2[n].state != OBJECT_DIED)
+			int viewIndex = lpObj->VpPlayer2[n].index;
+			if (OBJECT_RANGE(viewIndex) != 0 && gObj[viewIndex].Connected == OBJECT_ONLINE)
 			{
-				DataSend(lpObj->VpPlayer2[n].index, (BYTE*)&pMsg, pMsg.header.size);
+				DataSend(viewIndex, (BYTE*)&pMsg, pMsg.header.size);
 			}
 		}
 	}
