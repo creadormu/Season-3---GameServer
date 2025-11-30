@@ -675,19 +675,9 @@ void OfflineMode::RenderAttack(int aIndex)	//-- INCOMPLETO
 
 						pMsg.header.set(0x1E, sizeof(pMsg));
 
-						#if(GAMESERVER_UPDATE>=701)
-
-						pMsg.skillH = SET_NUMBERHB(0);
-
-						pMsg.skillL = SET_NUMBERLB((((GetLargeRand()%100)>=25)?1:0));
-
-						#else
-
 						pMsg.skill[0] = SET_NUMBERHB(SkillRender->m_index);
 
 						pMsg.skill[1] = SET_NUMBERLB(SkillRender->m_index);
-
-						#endif
 
 						pMsg.x = (BYTE)gObj[tObjNum].X;
 
@@ -699,19 +689,9 @@ void OfflineMode::RenderAttack(int aIndex)	//-- INCOMPLETO
 
 						pMsg.angle = (gSkillManager->GetSkillAngle(lpObj->X, lpObj->Y, gObj[tObjNum].X, gObj[tObjNum].Y)*255) / 360;
 
-						#if(GAMESERVER_UPDATE>=803)
-
-						pMsg.indexH = SET_NUMBERHB(lpObj->TargetNumber);
-
-						pMsg.indexL = SET_NUMBERLB(lpObj->TargetNumber);
-
-						#else
-
 						pMsg.index[0] = SET_NUMBERHB(tObjNum);
 
 						pMsg.index[1] = SET_NUMBERLB(tObjNum);
-
-						#endif
 
 						pMsg.MagicKey = 0;
 
