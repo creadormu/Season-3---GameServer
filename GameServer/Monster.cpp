@@ -2109,3 +2109,208 @@ bool gObjMonsterFindMonViewportObj2(int aIndex,int bIndex) // OK
 
 	return 0;
 }
+
+//mc
+bool gObjSetBots(int aIndex, int MonsterClass) // OK SACAR LO QUE NO ES NESESARIO CUANDO SE FINALIZE 
+{
+	if (OBJECT_RANGE(aIndex) == 0)
+	{
+		return 0;
+	}
+
+	LPOBJ lpObj = &gObj[aIndex];
+
+	lpObj->ConnectTickCount = GetTickCount();
+	lpObj->ShopNumber = -1;
+	lpObj->TargetNumber = -1;
+	lpObj->SummonIndex = -1;
+	lpObj->LastAttackerID = -1;
+	lpObj->Connected = OBJECT_ONLINE;
+	lpObj->Live = 1;
+	lpObj->State = OBJECT_CREATE;
+	lpObj->DieRegen = 0;
+	lpObj->Type = OBJECT_BOTS;
+
+	MONSTER_INFO* lpInfo = gMonsterManager->GetInfo(MonsterClass);
+
+	if (lpInfo == 0)
+	{
+		return 0;
+	}
+
+	memcpy(lpObj->Name, lpInfo->Name, sizeof(lpObj->Name));
+
+	lpObj->Level = lpInfo->Level;
+	lpObj->PhysiSpeed = lpInfo->AttackSpeed;
+	lpObj->PhysiDamageMin = lpInfo->DamageMin;
+	lpObj->PhysiDamageMax = lpInfo->DamageMax;
+	lpObj->Defense = lpInfo->Defense;
+	lpObj->MagicDefense = lpInfo->MagicDefense;
+	lpObj->AttackSuccessRate = lpInfo->AttackRate;
+	lpObj->DefenseSuccessRate = lpInfo->DefenseRate;
+	lpObj->Life = (float)lpInfo->Life;
+	lpObj->MaxLife = (float)lpInfo->Life;
+	lpObj->Mana = (float)lpInfo->Mana;
+	lpObj->MaxMana = (float)lpInfo->Mana;
+	lpObj->MoveRange = lpInfo->MoveRange;
+	lpObj->MoveSpeed = lpInfo->MoveSpeed;
+	lpObj->MaxRegenTime = lpInfo->RegenTime * 1000;
+	lpObj->AttackRange = lpInfo->AttackRange;
+	lpObj->ViewRange = lpInfo->ViewRange;
+	lpObj->Attribute = lpInfo->Attribute;
+	lpObj->AttackType = lpInfo->AttackType;
+	lpObj->ItemRate = lpInfo->ItemRate;
+	lpObj->MoneyRate = lpInfo->MoneyRate;
+	lpObj->Resistance[0] = ((lpInfo->Resistance[0] > 255) ? 255 : lpInfo->Resistance[0]);
+	lpObj->Resistance[1] = ((lpInfo->Resistance[0] > 255) ? 255 : lpInfo->Resistance[1]);
+	lpObj->Resistance[2] = ((lpInfo->Resistance[0] > 255) ? 255 : lpInfo->Resistance[2]);
+	lpObj->Resistance[3] = ((lpInfo->Resistance[0] > 255) ? 255 : lpInfo->Resistance[3]);
+	lpObj->Resistance[4] = ((lpInfo->Resistance[0] > 255) ? 255 : lpInfo->Resistance[4]);
+	lpObj->Resistance[5] = ((lpInfo->Resistance[0] > 255) ? 255 : lpInfo->Resistance[5]);
+	lpObj->Resistance[6] = ((lpInfo->Resistance[0] > 255) ? 255 : lpInfo->Resistance[6]);
+	lpObj->ScriptMaxLife = (float)lpInfo->ScriptLife;
+	lpObj->BasicAI = lpInfo->AINumber;
+	lpObj->CurrentAI = lpInfo->AINumber;
+	lpObj->CurrentAIState = 0;
+	lpObj->LastAIRunTime = 0;
+	lpObj->GroupNumber = 0;
+	lpObj->SubGroupNumber = 0;
+	lpObj->GroupMemberGuid = -1;
+	lpObj->RegenType = 0;
+
+	lpObj->Agro.ResetAll();
+
+	gObjSetInventory1Pointer(lpObj);
+
+	gCustomMonster->SetCustomMonsterInfo(lpObj);
+
+	if (lpObj->AttackType != 0)
+	{
+		if (lpObj->AttackType == 150)
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_MONSTER_AREA_ATTACK, 0);
+		}
+		else
+		{
+			gSkillManager->AddSkill(lpObj, lpObj->AttackType, 0);
+		}
+
+		if (MonsterClass == 66 || MonsterClass == 73) // Cursed King,Drakan
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_ENERGY_BALL, 0);
+		}
+
+		if (MonsterClass == 77) // Phoenix of Darkness
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_LIGHTNING, 0);
+		}
+
+		if (MonsterClass == 89 || MonsterClass == 95 || MonsterClass == 112 || MonsterClass == 118 || MonsterClass == 124 || MonsterClass == 130 || MonsterClass == 143 || MonsterClass == 433) // Spirit Sorcerer
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_LIGHTNING, 0);
+		}
+
+		if (MonsterClass == 144 || MonsterClass == 174 || MonsterClass == 182 || MonsterClass == 190 || MonsterClass == 260 || MonsterClass == 268 && MonsterClass == 331) // Kalima Death Angel
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_ENERGY_BALL, 0);
+		}
+
+		if (MonsterClass == 145 || MonsterClass == 175 || MonsterClass == 183 || MonsterClass == 191 || MonsterClass == 261 || MonsterClass == 269 && MonsterClass == 332) // Kalima Death Centurion
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_ENERGY_BALL, 0);
+		}
+
+		if (MonsterClass == 146 || MonsterClass == 176 || MonsterClass == 184 || MonsterClass == 192 || MonsterClass == 262 || MonsterClass == 270 && MonsterClass == 333) // Kalima Bloody Soldier
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_ENERGY_BALL, 0);
+		}
+
+		if (MonsterClass == 147 || MonsterClass == 177 || MonsterClass == 185 || MonsterClass == 193 || MonsterClass == 263 || MonsterClass == 271 && MonsterClass == 334) // Kalima Aegis
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_ENERGY_BALL, 0);
+		}
+
+		if (MonsterClass == 148 || MonsterClass == 178 || MonsterClass == 186 || MonsterClass == 194 || MonsterClass == 264 || MonsterClass == 272 && MonsterClass == 335) // Kalima Lord Centurion
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_ENERGY_BALL, 0);
+		}
+
+		if (MonsterClass == 149 || MonsterClass == 179 || MonsterClass == 187 || MonsterClass == 195 || MonsterClass == 265 || MonsterClass == 273 && MonsterClass == 336) // Kalima Necron
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_POISON, 0);
+			gSkillManager->AddSkill(lpObj, SKILL_ENERGY_BALL, 0);
+		}
+
+		if (MonsterClass == 160 || MonsterClass == 180 || MonsterClass == 188 || MonsterClass == 196 || MonsterClass == 266 || MonsterClass == 274 && MonsterClass == 337) // Kalima Schriker
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_ENERGY_BALL, 0);
+		}
+
+		if (MonsterClass == 161 || MonsterClass == 181 || MonsterClass == 189 || MonsterClass == 197 || MonsterClass == 267 || MonsterClass == 275 && MonsterClass == 338) // Shadow of Kundun
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_POISON, 0);
+			gSkillManager->AddSkill(lpObj, SKILL_ENERGY_BALL, 0);
+			gSkillManager->AddSkill(lpObj, SKILL_FIRE_SLASH, 0);
+			gSkillManager->AddSkill(lpObj, SKILL_MONSTER_SUMMON, 0);
+			gSkillManager->AddSkill(lpObj, SKILL_MAGIC_DAMAGE_IMMUNITY, 0);
+			gSkillManager->AddSkill(lpObj, SKILL_PHYSI_DAMAGE_IMMUNITY, 0);
+		}
+
+		if (MonsterClass == 163 || MonsterClass == 165 || MonsterClass == 167 || MonsterClass == 169 || MonsterClass == 171 || MonsterClass == 173 || MonsterClass == 427) // Chaos Castle Wizard
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_ENERGY_BALL, 0);
+		}
+
+		if (MonsterClass == 529 || MonsterClass == 530)
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_MONSTER_AREA_ATTACK, 0);
+		}
+
+		if (MonsterClass == 533)
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_SELF_EXPLOSION, 0);
+		}
+
+		if (MonsterClass == 534)
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_FIVE_SHOT, 0);
+		}
+
+		if (MonsterClass == 535)
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_TWISTING_SLASH, 0);
+		}
+
+		if (MonsterClass == 536)
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_ICE_STORM, 0);
+		}
+
+		if (MonsterClass == 537)
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_POWER_SLASH, 0);
+		}
+
+		if (MonsterClass == 538)
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_EARTHQUAKE, 0);
+		}
+
+		if (MonsterClass == 539)
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_RED_STORM, 0);
+		}
+
+		if (MonsterClass == 561)
+		{
+			gSkillManager->AddSkill(lpObj, SKILL_EVIL_SPIRIT, 0);
+			gSkillManager->AddSkill(lpObj, SKILL_DECAY, 0);
+			gSkillManager->AddSkill(lpObj, SKILL_BIRDS, 0);
+		}
+	}
+
+	gMap[lpObj->Map].SetStandAttr(lpObj->X, lpObj->Y);
+	lpObj->OldX = lpObj->X;
+	lpObj->OldY = lpObj->Y;
+	return 1;
+}

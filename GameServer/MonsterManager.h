@@ -18,6 +18,7 @@ struct MONSTER_INFO
 	int Type;
 	char Name[32];
 	int Level;
+	int AINumber;
 	int Life;
 	int ScriptLife;
 	int Mana;

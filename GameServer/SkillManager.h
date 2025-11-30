@@ -480,6 +480,7 @@ public:
 	void ApplyEarthPrisonEffect(LPOBJ lpObj,LPOBJ lpTarget,CSkill* lpSkill,int damage);
 	void CGMultiSkillAttackRecv(PMSG_MULTI_SKILL_ATTACK_RECV* lpMsg,int aIndex,bool type);
 	void CGSkillAttackRecv(PMSG_SKILL_ATTACK_RECV* lpMsg,int aIndex);
+	bool BotUseSkill(LPOBJ lpBot, LPOBJ lpTarget, int skill);
 	void CGDurationSkillAttackRecv(PMSG_DURATION_SKILL_ATTACK_RECV* lpMsg,int aIndex);
 	void CGSkillCancelRecv(PMSG_SKILL_CANCEL_RECV* lpMsg,int aIndex);
 	void CGRageFighterSkillAttackRecv(PMSG_RAGE_FIGHTER_SKILL_ATTACK_RECV* lpMsg,int aIndex);

@@ -642,6 +642,12 @@ void gObjCharZeroSet(int aIndex) // OK
 	lpObj->MasterReset = 0;
 	lpObj->ChangeSkin = 0;
 
+
+#if(OFFLINE_MODE)
+	lpObj->m_OfflineSocket = false;
+	lpObj->m_OfflineMode = 0;
+#endif
+
 	memset(&lpObj->EffectOption,0,sizeof(lpObj->EffectOption));
 
 	gObjClearSpecialOption(lpObj);
@@ -1175,7 +1181,7 @@ bool gObjIsConnectedGP(int aIndex) // OK
 		return 0;
 	}
 
-	if(lpObj->Type != OBJECT_USER || (lpObj->CloseCount > 0 || lpObj->MapServerMoveQuit != 0))
+	if (lpObj->Type != OBJECT_USER && lpObj->Type != OBJECT_BOTS || (lpObj->CloseCount > 0 || lpObj->MapServerMoveQuit != 0))
 	{
 		return 0;
 	}
@@ -1197,7 +1203,7 @@ bool gObjIsConnectedGS(int aIndex) // OK
 		return 0;
 	}
 
-	if(lpObj->Type == OBJECT_USER && (lpObj->CloseCount > 0 || lpObj->MapServerMoveQuit != 0))
+	if (lpObj->Type == OBJECT_USER && lpObj->Type != OBJECT_BOTS && (lpObj->CloseCount > 0 || lpObj->MapServerMoveQuit != 0))
 	{
 		return 0;
 	}
@@ -1665,7 +1671,14 @@ void gObjViewportListProtocolDestroy(LPOBJ lpObj) // OK
 
 void gObjViewportListProtocolCreate(LPOBJ lpObj) // OK
 {
-	if(lpObj->Type == OBJECT_USER)
+
+	// Don't send viewport packets TO bots
+	if (lpObj->IsFakeOnline != 0 || lpObj->Socket == INVALID_SOCKET)
+	{
+		return;
+	}
+
+	if (lpObj->Type == OBJECT_USER || lpObj->Type == OBJECT_BOTS) //MC
 	{
 		gInvasionManager->CheckEvent(lpObj);
 		gViewport->GCViewportSimplePlayerSend(lpObj);

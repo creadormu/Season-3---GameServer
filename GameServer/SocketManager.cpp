@@ -539,7 +539,14 @@ void CSocketManager::Disconnect(int index) // OK
 
 	gObj[index].Socket = INVALID_SOCKET;
 
+#if(OFFLINE_MODE==TRUE)
+	if (gObj[index].m_OfflineSocket == false)
+	{
+		gObjDel(index);
+	}
+#else	
 	gObjDel(index);
+#endif
 
 	this->m_critical.unlock();
 }

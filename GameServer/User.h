@@ -67,6 +67,7 @@ enum eObjectType
 	OBJECT_MONSTER = 2,
 	OBJECT_NPC = 3,
 	OBJECT_ITEM = 5,
+	OBJECT_BOTS = 6,//MC
 };
 
 enum eObjectState
@@ -934,6 +935,7 @@ struct OBJECTSTRUCT
 	//FakeOnline_EMU
 #if USE_FAKE_ONLINE == TRUE
 	bool IsFakeOnline;
+	bool FakeOnline;
 	DWORD m_OfflineMoveDelay;
 	bool IsFakeRegen;
 	int	 IsFakePVPMode;

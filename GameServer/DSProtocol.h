@@ -648,6 +648,7 @@ void GDCrywolfSyncSend(int MapServerGroup,int CrywolfState,int OccupationState);
 void GDCrywolfInfoSend(int MapServerGroup);
 void GDGlobalPostSend(int MapServerGroup,BYTE type,WORD code,char* name,char* message);
 
+
 void GDGlobalNoticeSend(int MapServerGroup,BYTE type,BYTE count,BYTE opacity,WORD delay,DWORD color,BYTE speed,char* message,...);
 void GDSNSDataSend(int aIndex);
 void GDCharacterInfoSaveSend(int aIndex);

@@ -189,17 +189,45 @@ void LogAdd(eLogColor color,char* text,...) // OK
 
 bool DataSend(int aIndex,BYTE* lpMsg,DWORD size) // OK
 {
+
+
+	// CRITICAL: Prevent crash when sending to FakeOnline bots
+	if (OBJECT_RANGE(aIndex) == 0)
+	{
+		return 0;
+	}
+
+	// Don't send packets to bots - they have no socket
+	if (gObj[aIndex].IsFakeOnline != 0 || gObj[aIndex].Socket == INVALID_SOCKET)
+	{
+		return 0;
+	}
+
+#if(OFFLINE_MODE == TRUE)
+	if (gObj[aIndex].m_OfflineMode == 1)
+	{
+		return 0;
+	}
+#endif
 	return gSocketManager->DataSend(aIndex,lpMsg,size);
 }
 
-void DataSendAll(BYTE* lpMsg,int size) // OK
+void DataSendAll(BYTE* lpMsg, int size)
 {
-	for(int n=OBJECT_START_USER;n < MAX_OBJECT;n++)
+	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{
-		if(gObjIsConnected(n) != 0)
+		if (gObjIsConnected(n) == 0)
 		{
-			DataSend(n,lpMsg,size);
+			continue;
 		}
+
+		// Skip bots
+		if (gObj[n].IsFakeOnline != 0 || gObj[n].Socket == INVALID_SOCKET)
+		{
+			continue;
+		}
+
+		DataSend(n, lpMsg, size);
 	}
 }
 
@@ -231,13 +259,24 @@ bool DataSendSocket(SOCKET socket,BYTE* lpMsg,DWORD size) // OK
 	return 1;
 }
 
-void MsgSendV2(LPOBJ lpObj,BYTE* lpMsg,int size) // OK
+void MsgSendV2(LPOBJ lpObj, BYTE* lpMsg, int size)
 {
-	for(int n=0;n < MAX_VIEWPORT;n++)
+	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
-		if(lpObj->VpPlayer2[n].state != VIEWPORT_NONE && lpObj->VpPlayer2[n].type == OBJECT_USER)
+		if (lpObj->VpPlayer2[n].type == OBJECT_USER)
 		{
-			DataSend(lpObj->VpPlayer2[n].index,lpMsg,size);
+			if (lpObj->VpPlayer2[n].state != OBJECT_EMPTY &&
+				lpObj->VpPlayer2[n].state != OBJECT_DIECMD &&
+				lpObj->VpPlayer2[n].state != OBJECT_DIED)
+			{
+				int target = lpObj->VpPlayer2[n].index;
+
+				// Skip if target is a bot
+				if (gObj[target].IsFakeOnline == 0 && gObj[target].Socket != INVALID_SOCKET)
+				{
+					DataSend(target, lpMsg, size);
+				}
+			}
 		}
 	}
 }

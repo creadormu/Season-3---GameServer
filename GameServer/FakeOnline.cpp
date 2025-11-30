@@ -77,45 +77,83 @@ void CFakeOnline::LoadFakeData(char* path)
 	this->IndexMsgMin = 0;
 	LoadBotPhrasesFromFile(".\\BotPhrases.txt");
 
+	LogAdd(LOG_BLACK, "[FakeOnline] Starting XML load from: %s", path);
+
 	pugi::xml_document file;
 	pugi::xml_parse_result res = file.load_file(path);
-	if (res.status != pugi::status_ok){
-		ErrorMessageBox("File %s load fail. Error: %s", path, res.description());
+
+	if (res.status != pugi::status_ok)
+	{
+		ErrorMessageBox("[FakeOnline] File %s load fail. Error: %s", path, res.description());
 		return;
 	}
+
+	LogAdd(LOG_BLACK, "[FakeOnline] XML file loaded successfully");
+
+	// Load message indices
 	pugi::xml_node Recipe = file.child("MSGThongBao");
-	this->IndexMsgMin = Recipe.attribute("IndexMesMin").as_int();
-	this->IndexMsgMax = Recipe.attribute("IndexMesMax").as_int();
+	if (!Recipe)
+	{
+		LogAdd(LOG_RED, "[FakeOnline] ERROR: MSGThongBao node not found!");
+	}
+	else
+	{
+		this->IndexMsgMin = Recipe.attribute("IndexMesMin").as_int();
+		this->IndexMsgMax = Recipe.attribute("IndexMesMax").as_int();
+		LogAdd(LOG_BLACK, "[FakeOnline] Message indices loaded - Min: %d, Max: %d", this->IndexMsgMin, this->IndexMsgMax);
+	}
 
 	pugi::xml_node oFakeOnlineData = file.child("FakeOnlineData");
-	for (pugi::xml_node rInfoData = oFakeOnlineData.child("Info"); rInfoData; rInfoData = rInfoData.next_sibling()){
+	if (!oFakeOnlineData)
+	{
+		LogAdd(LOG_RED, "[FakeOnline] ERROR: FakeOnlineData node not found!");
+		return;
+	}
+
+	LogAdd(LOG_BLACK, "[FakeOnline] Starting to parse bot entries...");
+
+	for (pugi::xml_node rInfoData = oFakeOnlineData.child("Info"); rInfoData; rInfoData = rInfoData.next_sibling())
+	{
 		OFFEXP_DATA info;
 		memset(&info, 0, sizeof(info));
 
-
 		strncpy(info.Account, rInfoData.attribute("Account").as_string(), sizeof(info.Account));
+		LogAdd(LOG_BLACK, "[FakeOnline] Reading bot - Account: %s", info.Account);
+
 		strncpy(info.Password, rInfoData.attribute("Password").as_string(), sizeof(info.Password));
 		strncpy(info.Name, rInfoData.attribute("Name").as_string(), sizeof(info.Name));
+		LogAdd(LOG_BLACK, "[FakeOnline] Name: %s", info.Name);
 
 		info.SkillID = rInfoData.attribute("SkillID").as_int();
 		info.UseBuffs[0] = rInfoData.attribute("UseBuffs_0").as_int();
 		info.UseBuffs[1] = rInfoData.attribute("UseBuffs_1").as_int();
 		info.UseBuffs[2] = rInfoData.attribute("UseBuffs_2").as_int();
+		LogAdd(LOG_BLACK, "[FakeOnline] SkillID: %d, Buffs: %d,%d,%d", info.SkillID, info.UseBuffs[0], info.UseBuffs[1], info.UseBuffs[2]);
+
 		info.GateNumber = rInfoData.attribute("GateNumber").as_int();
 		info.MapX = rInfoData.attribute("MapX").as_int();
 		info.MapY = rInfoData.attribute("MapY").as_int();
+		LogAdd(LOG_BLACK, "[FakeOnline] Gate: %d, Position: %d,%d", info.GateNumber, info.MapX, info.MapY);
+
 		info.PhamViTrain = rInfoData.attribute("PhamViTrain").as_int();
 		info.MoveRange = rInfoData.attribute("MoveRange").as_int();
 		info.TimeReturn = rInfoData.attribute("TimeReturn").as_int();
+		LogAdd(LOG_BLACK, "[FakeOnline] Ranges - PhamViTrain: %d, Move: %d, TimeReturn: %d", info.PhamViTrain, info.MoveRange, info.TimeReturn);
+
 		info.TuNhatItem = rInfoData.attribute("TuNhatItem").as_int();
 		info.TuDongReset = rInfoData.attribute("TuDongReset").as_int();
 		info.PartyMode = rInfoData.attribute("PartyMode").as_int();
 		info.PVPMode = rInfoData.attribute("PVPMode").as_int();
 		info.PostKhiDie = rInfoData.attribute("PostKhiDie").as_int();
-		this->m_Data.insert(std::pair<std::string, OFFEXP_DATA>(info.Account, info));
+		LogAdd(LOG_BLACK, "[FakeOnline] Modes - TuNhat: %d, AutoReset: %d, Party: %d, PVP: %d, PostDie: %d",
+			info.TuNhatItem, info.TuDongReset, info.PartyMode, info.PVPMode, info.PostKhiDie);
 
+		LogAdd(LOG_BLACK, "[FakeOnline] Inserting bot into map...");
+		this->m_Data.insert(std::pair<std::string, OFFEXP_DATA>(info.Account, info));
+		LogAdd(LOG_GREEN, "[FakeOnline] Bot '%s' added successfully!", info.Name);
 	}
-	LogAdd(LOG_BLUE, "[FakeOnline] Load Data OK");
+
+	LogAdd(LOG_BLUE, "[FakeOnline] Load Data OK - Total bots: %d", this->m_Data.size());
 }
 
 // --- NUEVA FUNCIÓN ---
@@ -268,53 +306,96 @@ void CFakeOnline::InitializeBotPhrases()
 // --- NUEVA FUNCIÓN ---
 
 // --- FIN NUEVA FUNCIÓN ---
-
 void CFakeOnline::RestoreFakeOnline()
 {
-	//	for (int i=0;i<this->m_Data.size();i++)
-	for (std::map<std::string, OFFEXP_DATA>::iterator it = this->m_Data.begin(); it != this->m_Data.end(); it++)
+	LogAdd(LOG_BLACK, "[FakeOnline] ===== RestoreFakeOnline() STARTED =====");
+	LogAdd(LOG_BLACK, "[FakeOnline] Total bots in m_Data: %d", this->m_Data.size());
+
+	int count = 0;
+	int skipped = 0;
+	int added = 0;
+
+	for (std::map<std::string, OFFEXP_DATA>::iterator it = this->m_Data.begin();
+		it != this->m_Data.end(); it++)
 	{
+		count++;
+		LogAdd(LOG_BLACK, "[FakeOnline] [%d/%d] Processing Account: %s, Name: %s",
+			count, this->m_Data.size(), it->second.Account, it->second.Name);
+
 		if (gObjFindByAcc(it->second.Account) != 0)
 		{
+			skipped++;
+			LogAdd(LOG_BLUE, "[FakeOnline] Account %s already online, skipping", it->second.Account);
 			continue;
 		}
 
 		int aIndex = gObjAddSearch(0, "127.0.0.1");
+		LogAdd(LOG_BLACK, "[FakeOnline] Available slot index: %d", aIndex);
 
-		//LogAdd(LOG_RED,"aIndex = %d",aIndex);
 		if (aIndex >= 0)
 		{
-
 			char account[11] = { 0 };
 			memcpy(account, it->second.Account, (sizeof(account) - 1));
-
 			char password[11] = { 0 };
 			memcpy(password, it->second.Password, (sizeof(password) - 1));
 
-
+			LogAdd(LOG_BLACK, "[FakeOnline] Initializing bot object...");
 			gObjAdd(0, "127.0.0.1", aIndex);
-			gObj[aIndex].LoginMessageSend++;
-			gObj[aIndex].LoginMessageSend++;
-			gObj[aIndex].LoginMessageCount++;
+
+			// Mark as FakeOnline bot
+			gObj[aIndex].IsFakeOnline = 1;
+			gObj[aIndex].FakeOnline = 1;
+			gObj[aIndex].Socket = INVALID_SOCKET;
+			gObj[aIndex].Connected = OBJECT_CONNECTED;
+
+			// Set account info
+			memcpy(gObj[aIndex].Account, account, sizeof(gObj[aIndex].Account));
+			memcpy(gObj[aIndex].Password, password, sizeof(gObj[aIndex].Password));
+
+			// Set connection properties
+			gObj[aIndex].LoginMessageSend = 2;
+			gObj[aIndex].LoginMessageCount = 1;
 			gObj[aIndex].ConnectTickCount = GetTickCount();
 			gObj[aIndex].ClientTickCount = GetTickCount();
 			gObj[aIndex].ServerTickCount = GetTickCount();
-
 			gObj[aIndex].MapServerMoveRequest = 0;
 			gObj[aIndex].LastServerCode = -1;
 			gObj[aIndex].DestMap = -1;
 			gObj[aIndex].DestX = 0;
 			gObj[aIndex].DestY = 0;
 
-			GJConnectAccountSend(aIndex, account, password, "127.0.0.1", 0);
+			LogAdd(LOG_BLACK, "[FakeOnline] Creating fake JoinServer auth response...");
+
+			// Create fake JoinServer success response
+			SDHP_CONNECT_ACCOUNT_RECV pMsg;
+			memset(&pMsg, 0, sizeof(pMsg));
+
+			pMsg.index = aIndex;
+			pMsg.result = 1; // Success
+			pMsg.BlockCode = 0;
+			pMsg.AccountLevel = 0; // Normal account, adjust if needed
+			memcpy(pMsg.account, account, sizeof(pMsg.account));
+			memcpy(pMsg.PersonalCode, "0000000000", sizeof(pMsg.PersonalCode));
+			memcpy(pMsg.AccountExpireDate, "2099-12-31", sizeof(pMsg.AccountExpireDate));
+
+			LogAdd(LOG_BLACK, "[FakeOnline] Calling JGConnectAccountRecv with fake auth packet...");
+			JGConnectAccountRecv(&pMsg);
 
 			gObj[aIndex].Socket = INVALID_SOCKET;
 
-			LogAdd(LOG_RED, "[FakeOnline]  [TK: %s NV: %s] Da Online Vao Server", it->second.Account, it->second.Name);
+			added++;
+			LogAdd(LOG_GREEN, "[FakeOnline] [TK: %s NV: %s] Bot authenticated successfully!",
+				it->second.Account, it->second.Name);
+		}
+		else
+		{
+			LogAdd(LOG_RED, "[FakeOnline] ERROR - No available slot for account: %s", it->second.Account);
 		}
 	}
-}
 
+	LogAdd(LOG_GREEN, "[FakeOnline] ===== RestoreFakeOnline() FINISHED =====");
+	LogAdd(LOG_GREEN, "[FakeOnline] Summary - Total: %d, Added: %d, Skipped: %d", count, added, skipped);
+}
 OFFEXP_DATA* CFakeOnline::GetOffExpInfo(LPOBJ lpObj)
 {
 	std::map<std::string, OFFEXP_DATA>::iterator it = this->m_Data.find(lpObj->Account);
@@ -1604,126 +1685,85 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 }
 //================ Attack Custom
 
-void CFakeOnline::SendSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber) // OK
+void CFakeOnline::SendSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber)
 {
-	PMSG_SKILL_ATTACK_RECV pMsg;
+	if (lpObj->IsFakeOnline == 0 || OBJECT_RANGE(aIndex) == 0)
+	{
+		return;
+	}
 
-	pMsg.header.set(0x19, sizeof(pMsg));
+	LPOBJ lpTarget = &gObj[aIndex];
 
-#if(GAMESERVER_UPDATE>=701)
+	if (lpTarget->Live == 0)
+	{
+		return;
+	}
 
-	pMsg.skillH = SET_NUMBERHB(SkillNumber);
+	// Get the skill
+	CSkill* lpSkill = gSkillManager->GetSkill(lpObj, SkillNumber);
 
-	pMsg.skillL = SET_NUMBERLB(SkillNumber);
+	if (lpSkill == 0)
+	{
+		return;
+	}
 
-	pMsg.indexH = SET_NUMBERHB(aIndex);
+	// Simple direct attack - no fancy checks
+	gAttack->Attack(lpObj, lpTarget, lpSkill, FALSE, 1, 0, FALSE, 0);
 
-	pMsg.indexL = SET_NUMBERLB(aIndex);
-
-#else
-
-	pMsg.skill[0] = SET_NUMBERHB(SkillNumber);
-
-	pMsg.skill[1] = SET_NUMBERLB(SkillNumber);
-
-	pMsg.index[0] = SET_NUMBERHB(aIndex);
-
-	pMsg.index[1] = SET_NUMBERLB(aIndex);
-
-#endif
-
-	pMsg.dis = 0;
 	lpObj->IsFakeTimeLag = GetTickCount();
-	gSkillManager->CGSkillAttackRecv(&pMsg, lpObj->Index);
 }
 
-void CFakeOnline::SendMultiSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber) // OK
+void CFakeOnline::SendMultiSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber)
 {
-	this->SendDurationSkillAttack(lpObj, aIndex, SkillNumber);
+	if (lpObj->IsFakeOnline == 0)
+	{
+		return;
+	}
 
-	BYTE send[256];
-
-	PMSG_MULTI_SKILL_ATTACK_RECV pMsg;
-
-	pMsg.header.set(PROTOCOL_CODE4, sizeof(pMsg));
-
-	int size = sizeof(pMsg);
-
-#if(GAMESERVER_UPDATE>=701)
-
-	pMsg.skillH = SET_NUMBERHB(SkillNumber);
-
-	pMsg.skillL = SET_NUMBERLB(SkillNumber);
-
-#else
-
-	pMsg.skill[0] = SET_NUMBERHB(SkillNumber);
-
-	pMsg.skill[1] = SET_NUMBERLB(SkillNumber);
-
-#endif
-
-	pMsg.x = (BYTE)lpObj->X;
-
-	pMsg.y = (BYTE)lpObj->Y;
-
-	pMsg.serial = 0;
-
-	pMsg.count = 0;
-
-	PMSG_MULTI_SKILL_ATTACK info;
+	int attackCount = 0;
 
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
-		if (lpObj->VpPlayer2[n].state == VIEWPORT_NONE || OBJECT_RANGE(lpObj->VpPlayer2[n].index) == 0 /*|| lpObj->VpPlayer2[n].type != OBJECT_MONSTER*/)
+		if (lpObj->VpPlayer2[n].state == VIEWPORT_NONE || OBJECT_RANGE(lpObj->VpPlayer2[n].index) == 0)
 		{
 			continue;
 		}
 
 		int index = lpObj->VpPlayer2[n].index;
+		LPOBJ lpTarget = &gObj[index];
 
-		if (gSkillManager->CheckSkillTarget(lpObj, index, aIndex, lpObj->VpPlayer2[n].type) == 0)
+		if (lpTarget->Live == 0)
 		{
 			continue;
 		}
 
-		if (gSkillManager->CheckSkillRadio(SkillNumber, lpObj->X, lpObj->Y, gObj[index].X, gObj[index].Y) == 0)
+		// Get the skill
+		CSkill* lpSkill = gSkillManager->GetSkill(lpObj, SkillNumber);
+
+		if (lpSkill == 0)
 		{
 			continue;
 		}
 
-#if(GAMESERVER_UPDATE>=701)
+		// Simple radio check
+		if (gSkillManager->CheckSkillRadio(SkillNumber, lpObj->X, lpObj->Y, lpTarget->X, lpTarget->Y) == 0)
+		{
+			continue;
+		}
 
-		info.indexH = SET_NUMBERHB(index);
+		// Simple direct attack
+		gAttack->Attack(lpObj, lpTarget, lpSkill, FALSE, 1, 0, FALSE, 0);
 
-		info.indexL = SET_NUMBERLB(index);
+		attackCount++;
 
-#else
-
-		info.index[0] = SET_NUMBERHB(index);
-
-		info.index[1] = SET_NUMBERLB(index);
-
-#endif
-
-		info.MagicKey = 0;
-
-		memcpy(&send[size], &info, sizeof(info));
-		size += sizeof(info);
-
-		if (CHECK_SKILL_ATTACK_COUNT(pMsg.count) == 0)
+		if (attackCount >= 5)
 		{
 			break;
 		}
 	}
 
-	pMsg.header.size = size;
-
-	memcpy(send, &pMsg, sizeof(pMsg));
 	lpObj->IsFakeTimeLag = GetTickCount();
-	gSkillManager->CGMultiSkillAttackRecv((PMSG_MULTI_SKILL_ATTACK_RECV*)send, lpObj->Index, 0);
 }
-
 void CFakeOnline::SendDurationSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber) // OK
 {
 	PMSG_DURATION_SKILL_ATTACK_RECV pMsg;

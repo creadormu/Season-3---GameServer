@@ -4550,6 +4550,12 @@ void CSkillManager::CGSkillAttackRecv(PMSG_SKILL_ATTACK_RECV* lpMsg,int aIndex) 
 {
 	LPOBJ lpObj = &gObj[aIndex];
 
+	    // Bots can't manually cast skills from client
+    if(lpObj->IsFakeOnline != 0)
+    {
+        return;
+    }
+
 	if(gObjIsConnectedGS(aIndex) == 0)
 	{
 		return;
