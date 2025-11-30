@@ -1032,13 +1032,15 @@ void CCustomAttack::CustomAttackUseSkill(LPOBJ lpObj,LPOBJ lpTarget,CUSTOM_ATTAC
 	lpObj->Attack.AttackTime = (GetTickCount()+SkillDelay);
 }
 
-void CCustomAttack::CustomAttackSkillAttack(LPOBJ lpObj,int bIndex,int skill) // OK
+void CCustomAttack::CustomAttackSkillAttack(LPOBJ lpObj,int bIndex,int SkillNumber) // OK
 {
 	PMSG_SKILL_ATTACK_RECV pMsg;
 
 	pMsg.header.set(0x19,sizeof(pMsg));
 
-	pMsg.skill = skill;
+	pMsg.skill[0] = SET_NUMBERHB(SkillNumber);
+
+	pMsg.skill[1] = SET_NUMBERLB(SkillNumber);
 
 	pMsg.index[0] = SET_NUMBERHB(bIndex);
 
@@ -1061,7 +1063,9 @@ void CCustomAttack::CustomAttackMultilAttack(LPOBJ lpObj,int bIndex,int skill) /
 
 	int size = sizeof(pMsg);
 
-	pMsg.skill = skill;
+	pMsg.skill[0] = SET_NUMBERHB(1);
+
+	pMsg.skill[1] = SET_NUMBERLB(1);
 
 	pMsg.x = (BYTE)lpObj->X;
 
@@ -1154,13 +1158,15 @@ bool CCustomAttack::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterI
 }
 
 
-void CCustomAttack::CustomAttackDurationlAttack(LPOBJ lpObj,int bIndex,int skill) // OK
+void CCustomAttack::CustomAttackDurationlAttack(LPOBJ lpObj,int bIndex,int SkillNumber) // OK
 {
 	PMSG_DURATION_SKILL_ATTACK_RECV pMsg;
 
 	pMsg.header.set(0x1E,sizeof(pMsg));
 
-	pMsg.skill = skill;
+	pMsg.skill[0] = SET_NUMBERHB(SkillNumber);
+
+	pMsg.skill[1] = SET_NUMBERLB(SkillNumber);
 
 	pMsg.x = (BYTE)gObj[bIndex].X;
 

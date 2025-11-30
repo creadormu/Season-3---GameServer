@@ -16,7 +16,6 @@
 #include "Viewport.h"
 //#include "Reconnect.h"
 #include "Util.h"
-#include "MemScript.h"
 #include "Path.h"
 #include "Party.h"
 #include "EffectManager.h"
@@ -32,7 +31,7 @@
 #include <string>
 #include "JSProtocol.h"
 #include "ObjectManager.h"
-//#include "OfflineMode.h"
+#include "OfflineMode.h"
 #include "Move.h"
 #include "CommandManager.h"
 #include "Gate.h"
@@ -44,6 +43,7 @@
 #include "Log.h" // Para gLog u otra utilidad de logging
 #include "User.h"
 #include "Item.h"
+#include "pugixml.hpp"
 
 #if USE_FAKE_ONLINE == TRUE
 
@@ -790,19 +790,19 @@ void CFakeOnline::PostChatMSG(LPOBJ lpObj)
 			}
 			else if (gServerInfo->m_CommandPostType == 4)
 			{
-				GDGlobalPostSend(gMapServerManager->GetMapServerGroup(), 0, lpObj->Name, gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
+				GDGlobalPostSend(gMapServerManager->GetMapServerGroup(), 0, 0, lpObj->Name, gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
 			}
 			else if (gServerInfo->m_CommandPostType == 5)
 			{
-				GDGlobalPostSend(gMapServerManager->GetMapServerGroup(), 1, lpObj->Name, gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
+				GDGlobalPostSend(gMapServerManager->GetMapServerGroup(), 1, 0, lpObj->Name, gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
 			}
 			else if (gServerInfo->m_CommandPostType == 6)
 			{
-				GDGlobalPostSend(gMapServerManager->GetMapServerGroup(), 2, lpObj->Name, gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
+				GDGlobalPostSend(gMapServerManager->GetMapServerGroup(), 2, 0, lpObj->Name, gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
 			}
 			else if (gServerInfo->m_CommandPostType == 7)
 			{
-				GDGlobalPostSend(gMapServerManager->GetMapServerGroup(), 3, lpObj->Name, gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
+				GDGlobalPostSend(gMapServerManager->GetMapServerGroup(), 3, 0, lpObj->Name, gMessage->GetMessageA(rand() % (this->IndexMsgMax - this->IndexMsgMin + 1) + this->IndexMsgMin));
 			}
 		}
 	}

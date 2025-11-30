@@ -1131,10 +1131,6 @@ struct OBJECTSTRUCT
 	DWORD m_OfflineTimeResetMove;
 
 
-
-
-
-
 };
 
 struct OBJECTSTRUCT_HEADER
@@ -1284,9 +1280,11 @@ LPOBJ gObjFindByAcc(char* account);
 
 extern int gObjCount;
 extern int gObjMonCount;
+extern int gObjBotCount;//MC
 extern int gObjCallMonCount;
 extern int gObjTotalUser;
 extern int gObjTotalMonster;
+extern int gObjTotalBot;
 extern int gObjTotalOffline;
 extern int gCloseMsg;
 extern int gCloseMsgTime;

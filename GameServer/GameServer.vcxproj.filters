@@ -709,6 +709,8 @@
     <ClInclude Include="FakeOnline.h" />
     <ClInclude Include="MemScript.h" />
     <ClInclude Include="OfflineMode.h" />
+    <ClInclude Include="pugiconfig.hpp" />
+    <ClInclude Include="pugixml.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ServerDisplayer.cpp">
@@ -1342,6 +1344,9 @@
       <Filter>Others</Filter>
     </ClCompile>
     <ClCompile Include="OfflineMode.cpp">
+      <Filter>Others</Filter>
+    </ClCompile>
+    <ClCompile Include="pugixml.cpp">
       <Filter>Others</Filter>
     </ClCompile>
   </ItemGroup>

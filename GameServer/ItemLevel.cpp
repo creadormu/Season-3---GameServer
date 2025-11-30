@@ -88,3 +88,16 @@ bool CItemLevel::CheckItemlevel(int index,int level) // OK
 
 	return 0;
 }
+
+char* CItemLevel::GetItemName(int ItemIndex, int level) // Add this to ItemLevel.cpp
+{
+	for (std::vector<ITEM_LEVEL_INFO>::iterator it = this->m_ItemLevelInfo.begin();
+		it != this->m_ItemLevelInfo.end(); it++)
+	{
+		if (it->ItemIndex == ItemIndex && it->Level == level)
+		{
+			return it->Name;
+		}
+	}
+	return gItemManager->GetItemName(ItemIndex, level); // Fallback to ItemManager
+}

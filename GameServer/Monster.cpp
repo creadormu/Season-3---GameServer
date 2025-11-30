@@ -914,7 +914,9 @@ void gObjMonsterMagicAttack(LPOBJ lpObj,int skill) // OK
 
 	int size = sizeof(pMsg);
 
-	pMsg.skill = 0;
+	pMsg.skill[0] = SET_NUMBERHB(1);
+
+	pMsg.skill[1] = SET_NUMBERLB(1);
 
 	pMsg.x = (BYTE)lpObj->X;
 
@@ -971,7 +973,7 @@ void gObjMonsterBeattackRecv(BYTE* aRecv,int aIndex) // OK
 {
 	PMSG_MULTI_SKILL_ATTACK_RECV* lpMsg = (PMSG_MULTI_SKILL_ATTACK_RECV*)aRecv;
 
-	CSkill* lpSkill = &gObj[aIndex].Skill[lpMsg->skill];
+	CSkill* lpSkill = &gObj[aIndex].Skill[MAKE_NUMBERW(lpMsg->skill[0], lpMsg->skill[1])];
 
 	if(lpSkill->IsSkill() == 0)
 	{
@@ -1001,7 +1003,10 @@ void gObjMonsterAttack(LPOBJ lpObj,LPOBJ lpTarget) // OK
 
 		pMsg.header.set(0x19,sizeof(pMsg));
 
-		pMsg.skill = 1;
+
+		pMsg.skill[0] = SET_NUMBERHB(1);
+
+		pMsg.skill[1] = SET_NUMBERLB(1);
 
 		pMsg.index[0] = SET_NUMBERHB(lpObj->TargetNumber);
 
@@ -1017,7 +1022,9 @@ void gObjMonsterAttack(LPOBJ lpObj,LPOBJ lpTarget) // OK
 
 		pMsg.header.set(0x19,sizeof(pMsg));
 
-		pMsg.skill = 1;
+		pMsg.skill[0] = SET_NUMBERHB(1);
+
+		pMsg.skill[1] = SET_NUMBERLB(1);
 
 		pMsg.index[0] = SET_NUMBERHB(lpObj->TargetNumber);
 
@@ -1035,7 +1042,9 @@ void gObjMonsterAttack(LPOBJ lpObj,LPOBJ lpTarget) // OK
 
 			pMsg.header.set(0x19,sizeof(pMsg));
 
-			pMsg.skill = 0;
+			pMsg.skill[0] = SET_NUMBERHB(1);
+
+			pMsg.skill[1] = SET_NUMBERLB(1);
 
 			pMsg.index[0] = SET_NUMBERHB(lpObj->TargetNumber);
 
@@ -1070,7 +1079,9 @@ void gObjMonsterAttack(LPOBJ lpObj,LPOBJ lpTarget) // OK
 
 			pMsg.header.set(0x19,sizeof(pMsg));
 
-			pMsg.skill = 0;
+			pMsg.skill[0] = SET_NUMBERHB(1);
+
+			pMsg.skill[1] = SET_NUMBERLB(1);
 
 			pMsg.index[0] = SET_NUMBERHB(lpObj->TargetNumber);
 
@@ -1103,7 +1114,9 @@ void gObjMonsterAttack(LPOBJ lpObj,LPOBJ lpTarget) // OK
 
 		pMsg.header.set(0x19,sizeof(pMsg));
 
-		pMsg.skill = (0+(GetLargeRand()%2));
+		pMsg.skill[0] = SET_NUMBERHB(1);
+
+		pMsg.skill[1] = SET_NUMBERLB(1);
 
 		pMsg.index[0] = SET_NUMBERHB(lpObj->TargetNumber);
 
@@ -1119,7 +1132,9 @@ void gObjMonsterAttack(LPOBJ lpObj,LPOBJ lpTarget) // OK
 
 		pMsg.header.set(0x19,sizeof(pMsg));
 
-		pMsg.skill = (1+(GetLargeRand()%6));
+		pMsg.skill[0] = SET_NUMBERHB(1);
+
+		pMsg.skill[1] = SET_NUMBERLB(1);
 
 		pMsg.index[0] = SET_NUMBERHB(lpObj->TargetNumber);
 
@@ -1137,7 +1152,9 @@ void gObjMonsterAttack(LPOBJ lpObj,LPOBJ lpTarget) // OK
 
 		pMsg.header.set(0x19,sizeof(pMsg));
 
-		pMsg.skill = 0;
+		pMsg.skill[0] = SET_NUMBERHB(1);
+
+		pMsg.skill[1] = SET_NUMBERLB(1);
 
 		pMsg.index[0] = SET_NUMBERHB(lpObj->TargetNumber);
 
@@ -1153,7 +1170,9 @@ void gObjMonsterAttack(LPOBJ lpObj,LPOBJ lpTarget) // OK
 
 		pMsg.header.set(0x1E,sizeof(pMsg));
 
-		pMsg.skill = 0;
+		pMsg.skill[0] = SET_NUMBERHB(1);
+
+		pMsg.skill[1] = SET_NUMBERLB(1);
 
 		pMsg.x = (BYTE)gObj[lpObj->TargetNumber].X;
 
@@ -1179,7 +1198,9 @@ void gObjMonsterAttack(LPOBJ lpObj,LPOBJ lpTarget) // OK
 
 		pMsg.header.set(0x1E,sizeof(pMsg));
 
-		pMsg.skill = (((GetLargeRand()%100)>=25)?1:0);
+		pMsg.skill[0] = SET_NUMBERHB(1);
+
+		pMsg.skill[1] = SET_NUMBERLB(1);
 
 		pMsg.x = (BYTE)gObj[lpObj->TargetNumber].X;
 
@@ -1223,7 +1244,9 @@ void gObjMonsterAttack(LPOBJ lpObj,LPOBJ lpTarget) // OK
 
 			pMsg.header.set(0x19,sizeof(pMsg));
 
-			pMsg.skill = 0;
+			pMsg.skill[0] = SET_NUMBERHB(1);
+
+			pMsg.skill[1] = SET_NUMBERLB(1);
 
 			pMsg.index[0] = SET_NUMBERHB(lpObj->TargetNumber);
 

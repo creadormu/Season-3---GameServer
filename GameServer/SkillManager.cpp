@@ -4442,7 +4442,7 @@ void CSkillManager::CGMultiSkillAttackRecv(PMSG_MULTI_SKILL_ATTACK_RECV* lpMsg,i
 		return;
 	}
 
-	int skill = lpMsg->skill;
+	int skill = MAKE_NUMBERW(lpMsg->skill[0], lpMsg->skill[1]);
 
 	if(gMap[lpObj->Map].CheckAttr(lpObj->X,lpObj->Y,1) != 0)
 	{
@@ -4584,7 +4584,7 @@ void CSkillManager::CGSkillAttackRecv(PMSG_SKILL_ATTACK_RECV* lpMsg,int aIndex) 
 		return;
 	}
 
-	int skill = lpMsg->skill;
+	int skill = MAKE_NUMBERW(lpMsg->skill[0], lpMsg->skill[1]);
 
 	if(gMap[lpObj->Map].CheckAttr(lpObj->X,lpObj->Y,1) != 0)
 	{
@@ -4669,7 +4669,7 @@ void CSkillManager::CGDurationSkillAttackRecv(PMSG_DURATION_SKILL_ATTACK_RECV* l
 		return;
 	}
 
-	int skill = lpMsg->skill;
+	int skill = MAKE_NUMBERW(lpMsg->skill[0], lpMsg->skill[1]);
 
 	if(gMap[lpObj->Map].CheckAttr(lpObj->X,lpObj->Y,1) != 0)
 	{
@@ -4738,7 +4738,7 @@ void CSkillManager::CGSkillCancelRecv(PMSG_SKILL_CANCEL_RECV* lpMsg,int aIndex) 
 		return;
 	}
 
-	gEffectManager->DelEffect(lpObj,this->GetSkillEffect(lpMsg->skill));
+	gEffectManager->DelEffect(lpObj, this->GetSkillEffect(MAKE_NUMBERW(lpMsg->skill[0], lpMsg->skill[1])));
 }
 
 void CSkillManager::CGRageFighterSkillAttackRecv(PMSG_RAGE_FIGHTER_SKILL_ATTACK_RECV* lpMsg,int aIndex) // OK
@@ -4847,7 +4847,8 @@ void CSkillManager::GCSkillAttackSend(LPOBJ lpObj,int skill,int aIndex,BYTE type
 
 	pMsg.header.setE(0x19,sizeof(pMsg));
 
-	pMsg.skill = skill;
+	pMsg.skill[0] = SET_NUMBERHB(skill);
+	pMsg.skill[1] = SET_NUMBERLB(skill);
 
 	pMsg.index[0] = SET_NUMBERHB(lpObj->Index);
 	pMsg.index[1] = SET_NUMBERLB(lpObj->Index);
@@ -4869,7 +4870,8 @@ void CSkillManager::GCSkillCancelSend(LPOBJ lpObj,int skill) // OK
 
 	pMsg.header.set(0x1B,sizeof(pMsg));
 
-	pMsg.skill = skill;
+	pMsg.skill[0] = SET_NUMBERHB(skill);
+	pMsg.skill[1] = SET_NUMBERLB(skill);
 
 	pMsg.index[0] = SET_NUMBERHB(lpObj->Index);
 	pMsg.index[1] = SET_NUMBERLB(lpObj->Index);
@@ -4893,7 +4895,8 @@ void CSkillManager::GCDurationSkillAttackSend(LPOBJ lpObj,int skill,BYTE x,BYTE 
 
 	pMsg.header.setE(0x1E,sizeof(pMsg));
 
-	pMsg.skill = skill;
+	pMsg.skill[0] = SET_NUMBERHB(skill);
+	pMsg.skill[1] = SET_NUMBERLB(skill);
 
 	pMsg.index[0] = SET_NUMBERHB(lpObj->Index);
 	pMsg.index[1] = SET_NUMBERLB(lpObj->Index);

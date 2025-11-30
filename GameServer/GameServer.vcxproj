@@ -221,6 +221,8 @@
     <ClInclude Include="PersonalShop.h" />
     <ClInclude Include="PetDamageTable.h" />
     <ClInclude Include="Protocol.h" />
+    <ClInclude Include="pugiconfig.hpp" />
+    <ClInclude Include="pugixml.hpp" />
     <ClInclude Include="QueryManager.h" />
     <ClInclude Include="Quest.h" />
     <ClInclude Include="QuestObjective.h" />
@@ -436,6 +438,7 @@
     <ClCompile Include="PersonalShop.cpp" />
     <ClCompile Include="PetDamageTable.cpp" />
     <ClCompile Include="Protocol.cpp" />
+    <ClCompile Include="pugixml.cpp" />
     <ClCompile Include="QueryManager.cpp" />
     <ClCompile Include="Quest.cpp" />
     <ClCompile Include="QuestObjective.cpp" />

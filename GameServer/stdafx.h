@@ -48,7 +48,7 @@
 #include <sqlext.h>
 #include <shellapi.h>
 #include "Singleton.h"
-#include "..\\..\\..\\Util\\\pugixml\\pugixml.hpp"
+#include "pugixml.hpp"
 #include "..\\..\\..\\Util\\lua\\include\\lua.hpp"
 
 #pragma comment(lib,"ws2_32.lib")
