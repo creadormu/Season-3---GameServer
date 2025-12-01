@@ -53,6 +53,15 @@ bool CAttack::Attack(LPOBJ lpObj,LPOBJ lpTarget,CSkill* lpSkill,bool send,BYTE f
 {
 	#pragma region ATTACK_CHECK
 
+	// DEBUG: Log attack entry
+	static DWORD lastDebugTime = 0;
+	if (GetTickCount() - lastDebugTime > 5000 && lpSkill != 0)
+	{
+		LogAdd(LOG_BLACK, "[Attack][DEBUG] Attacker=%s Type=%d Target=%s Type=%d Skill=%d TargetLife=%.0f",
+			lpObj->Name, lpObj->Type, lpTarget->Name, lpTarget->Type, lpSkill->m_index, lpTarget->Life);
+		lastDebugTime = GetTickCount();
+	}
+
 	if(lpObj->Index == lpTarget->Index)
 	{
 		return 0;
@@ -60,6 +69,7 @@ bool CAttack::Attack(LPOBJ lpObj,LPOBJ lpTarget,CSkill* lpSkill,bool send,BYTE f
 
 	if(lpObj->Type == OBJECT_USER && gObjIsConnectedGP(lpObj->Index) == 0)
 	{
+		LogAdd(LOG_RED, "[Attack][DEBUG] gObjIsConnectedGP failed for attacker %s", lpObj->Name);
 		return 0;
 	}
 
@@ -637,6 +647,13 @@ bool CAttack::Attack(LPOBJ lpObj,LPOBJ lpTarget,CSkill* lpSkill,bool send,BYTE f
 	#pragma endregion
 
 	#pragma region DAMAGE_APPLY
+
+	// DEBUG: Log damage before apply
+	if (damage > 0 && lpSkill != 0)
+	{
+		LogAdd(LOG_BLACK, "[Attack][DEBUG] Applying damage=%d to Target=%s Life=%.0f Skill=%d",
+			damage, lpTarget->Name, lpTarget->Life, skill);
+	}
 
 	int ShieldDamage = 0;
 

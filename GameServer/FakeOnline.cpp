@@ -496,27 +496,38 @@ void FakeAnimationMove(int aIndex, int x, int y, bool dixa)
 	if (dixa == true) {
 		int RandX = rand() % 3 + 1;
 		int RandY = rand() % 3 + 1;
+		int newX = lpObj->X;
+		int newY = lpObj->Y;
+
 		if (x > lpObj->X) {
-			BYTE attr = gMap[map_num].GetAttr(lpObj->X + RandX, lpObj->Y);
-			if ((attr & 1) == 0) lpObj->X += RandX;
+			newX = lpObj->X + RandX;
 		}
 		else if (x < lpObj->X) {
-			BYTE attr = gMap[map_num].GetAttr(lpObj->X - RandX, lpObj->Y);
-			if ((attr & 1) == 0) lpObj->X -= RandX;
+			newX = lpObj->X - RandX;
 		}
+
 		if (y > lpObj->Y) {
-			BYTE attr = gMap[map_num].GetAttr(lpObj->X, lpObj->Y + RandY);
-			if ((attr & 1) == 0) lpObj->Y += RandY;
+			newY = lpObj->Y + RandY;
 		}
 		else if (y < lpObj->Y) {
-			BYTE attr = gMap[map_num].GetAttr(lpObj->X, lpObj->Y - RandY);
-			if ((attr & 1) == 0) lpObj->Y -= RandY;
+			newY = lpObj->Y - RandY;
+		}
+
+		// Bounds check for coordinates (map is typically 256x256)
+		if (newX >= 0 && newX < 256 && newY >= 0 && newY < 256) {
+			BYTE attr = gMap[map_num].GetAttr(newX, newY);
+			if ((attr & 1) == 0) {
+				lpObj->X = newX;
+				lpObj->Y = newY;
+			}
 		}
 	}
 	else {
-		// Direct position set
-		lpObj->X = x;
-		lpObj->Y = y;
+		// Direct position set with bounds check
+		if (x >= 0 && x < 256 && y >= 0 && y < 256) {
+			lpObj->X = x;
+			lpObj->Y = y;
+		}
 	}
 
 	lpObj->TX = lpObj->X;
@@ -539,12 +550,19 @@ void FakeAnimationMove(int aIndex, int x, int y, bool dixa)
 	pMsg.y = (BYTE)lpObj->Y;
 	pMsg.dir = lpObj->Dir << 4;
 
+	// Safety check: ensure VpPlayer2 is valid before iterating
+	if (lpObj->VpPlayer2 == NULL)
+	{
+		LogAdd(LOG_RED, "[FakeOnline][ERROR] VpPlayer2 is NULL for bot %s", lpObj->Name);
+		return;
+	}
+
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
 		if (lpObj->VpPlayer2[n].type == OBJECT_USER && lpObj->VpPlayer2[n].state != VIEWPORT_NONE)
 		{
 			int viewIndex = lpObj->VpPlayer2[n].index;
-			if (OBJECT_RANGE(viewIndex) != 0 && gObj[viewIndex].Connected == OBJECT_ONLINE)
+			if (OBJECT_RANGE(viewIndex) != 0 && gObj[viewIndex].Connected == OBJECT_ONLINE && gObj[viewIndex].IsFakeOnline == 0)
 			{
 				DataSend(viewIndex, (BYTE*)&pMsg, pMsg.header.size);
 			}
@@ -604,7 +622,21 @@ void CFakeOnline::Attack(int aIndex)
 
 	LPOBJ lpObj = &gObj[aIndex];
 
-	if (lpObj->IsFakeOnline == 0 || !lpObj->IsFakeRegen)
+	if (lpObj->IsFakeOnline == 0)
+	{
+		return;
+	}
+
+	// Debug: Log attack function entry every 10 seconds
+	static DWORD lastDebugTime = 0;
+	if (GetTickCount() - lastDebugTime > 10000)
+	{
+		LogAdd(LOG_BLACK, "[FakeOnline][DEBUG] Attack called for %s, IsFakeRegen=%d, State=%d, Live=%d",
+			lpObj->Name, lpObj->IsFakeRegen, lpObj->State, lpObj->Live);
+		lastDebugTime = GetTickCount();
+	}
+
+	if (!lpObj->IsFakeRegen)
 	{
 		return;
 	}
@@ -882,6 +914,18 @@ void CFakeOnline::QuayLaiToaDoGoc(int aIndex)
 		return;
 	}
 
+	// Debug: Check for invalid states
+	if (lpObj->Connected < OBJECT_LOGGED)
+	{
+		LogAdd(LOG_RED, "[FakeOnline][ERROR] QuayLaiToaDoGoc: Bot %s has invalid Connected state: %d", lpObj->Name, lpObj->Connected);
+		return;
+	}
+
+	if (!MAP_RANGE(lpObj->Map))
+	{
+		LogAdd(LOG_RED, "[FakeOnline][ERROR] QuayLaiToaDoGoc: Bot %s has invalid Map: %d", lpObj->Name, lpObj->Map);
+		return;
+	}
 
 	OFFEXP_DATA *info = s_FakeOnline.GetOffExpInfo(lpObj);
 	if (info != 0 && lpObj->Socket == INVALID_SOCKET)
@@ -954,26 +998,28 @@ void CFakeOnline::QuayLaiToaDoGoc(int aIndex)
 				//======Move Range======//
 				int maxmoverange = MoveRange * 2 + 1;
 				int searchc = 10;
-				BYTE tpx;
-				BYTE tpy;
+
 				while (searchc-- != 0)
 				{
-					__try
-					{
-						tpx = (lpObj->X - MoveRange) + (BYTE)(GetLargeRand() % maxmoverange);
-						tpy = (lpObj->Y - MoveRange) + (BYTE)(GetLargeRand() % maxmoverange);
-					}
-					__except (maxmoverange = 1, 1)
-					{
+					// Use int for calculations to avoid overflow/underflow
+					int randX = GetLargeRand() % maxmoverange;
+					int randY = GetLargeRand() % maxmoverange;
+					int tpx = lpObj->X - MoveRange + randX;
+					int tpy = lpObj->Y - MoveRange + randY;
 
+					// Bounds check - ensure coordinates are valid (0-255)
+					if (tpx < 0 || tpx > 255 || tpy < 0 || tpy > 255)
+					{
+						continue; // Skip invalid coordinates
 					}
+
 					BYTE attr = gMap[lpObj->Map].GetAttr(tpx, tpy);
 					//LogAdd(LOG_BLUE,"[FakeOnline]DEBUG MOVE RANGE 1");
 					if ((attr & 1) != 1 && (attr & 2) != 2 && (attr & 4) != 4 && (attr & 8) != 8 && GetTickCount() >= lpObj->m_OfflineMoveDelay + 2000)
 					{
 						LogAdd(LOG_BLUE, "[FakeOnline] Rango de movimiento (%d,%d)", tpx, tpy);
 						lpObj->m_OfflineMoveDelay = GetTickCount();
-						FakeAnimationMove(lpObj->Index, tpx, tpy, false);
+						FakeAnimationMove(lpObj->Index, (BYTE)tpx, (BYTE)tpy, false);
 						return;
 
 					}
@@ -1180,6 +1226,12 @@ void CFakeOnline::TuDongBuffSkill(int aIndex)	//-- OK
 
 bool CFakeOnline::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterIndex) // OK
 {
+	// Safety check for VpPlayer2
+	if (lpObj->VpPlayer2 == NULL)
+	{
+		return 0;
+	}
+
 	int NearestDistance = 100;
 
 	for (int n = 0; n < MAX_VIEWPORT; n++)
@@ -1219,6 +1271,12 @@ bool CFakeOnline::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterInd
 
 bool CFakeOnline::GetTargetPlayer(LPOBJ lpObj, int SkillNumber, int* MonsterIndex) // OK
 {
+	// Safety check for VpPlayer2
+	if (lpObj->VpPlayer2 == NULL)
+	{
+		return 0;
+	}
+
 	int NearestDistance = 100;
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
@@ -1668,6 +1726,12 @@ void CFakeOnline::SendMultiSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber)
 		return;
 	}
 
+	// Safety check for VpPlayer2
+	if (lpObj->VpPlayer2 == NULL)
+	{
+		return;
+	}
+
 	int attackCount = 0;
 
 	for (int n = 0; n < MAX_VIEWPORT; n++)
@@ -2013,6 +2077,10 @@ std::string GetRandomBotPhrase(bool realPlayerNearby, bool inParty)
 
 void CFakeOnline::AttemptRandomBotComment(int aIndex)
 {
+	// Bounds check for aIndex
+	if (!OBJECT_RANGE(aIndex))
+		return;
+
 	LPOBJ lpObj = &gObj[aIndex];
 
 	if (lpObj->Connected != OBJECT_ONLINE || lpObj->Type != OBJECT_USER)
@@ -2020,6 +2088,10 @@ void CFakeOnline::AttemptRandomBotComment(int aIndex)
 
 	OFFEXP_DATA* pBotData = this->GetOffExpInfo(lpObj);
 	if (pBotData == nullptr)
+		return;
+
+	// Safety check for VpPlayer2
+	if (lpObj->VpPlayer2 == NULL)
 		return;
 
 	bool realPlayerNearby = false;
@@ -2042,9 +2114,8 @@ void CFakeOnline::AttemptRandomBotComment(int aIndex)
 		if (!phrase.empty()) {
 			char msg[256];
 			strncpy_s(msg, phrase.c_str(), _TRUNCATE);
-			if (gCommandManager->CommandPost(lpObj, msg)) {
-				this->m_dwLastCommentTick[aIndex] = GetTickCount();
-			}
+			gCommandManager->CommandPost(lpObj, msg);
+			this->m_dwLastCommentTick[aIndex] = GetTickCount();
 		}
 	}
 
