@@ -1038,9 +1038,7 @@ void CCustomAttack::CustomAttackSkillAttack(LPOBJ lpObj,int bIndex,int SkillNumb
 
 	pMsg.header.set(0x19,sizeof(pMsg));
 
-	pMsg.skill[0] = SET_NUMBERHB(SkillNumber);
-
-	pMsg.skill[1] = SET_NUMBERLB(SkillNumber);
+	pMsg.skill = (BYTE)SkillNumber;  // Original: single byte
 
 	pMsg.index[0] = SET_NUMBERHB(bIndex);
 
@@ -1063,9 +1061,7 @@ void CCustomAttack::CustomAttackMultilAttack(LPOBJ lpObj,int bIndex,int skill) /
 
 	int size = sizeof(pMsg);
 
-	pMsg.skill[0] = SET_NUMBERHB(1);
-
-	pMsg.skill[1] = SET_NUMBERLB(1);
+	pMsg.skill = 1;  // Original: single byte
 
 	pMsg.x = (BYTE)lpObj->X;
 
@@ -1164,9 +1160,7 @@ void CCustomAttack::CustomAttackDurationlAttack(LPOBJ lpObj,int bIndex,int Skill
 
 	pMsg.header.set(0x1E,sizeof(pMsg));
 
-	pMsg.skill[0] = SET_NUMBERHB(SkillNumber);
-
-	pMsg.skill[1] = SET_NUMBERLB(SkillNumber);
+	pMsg.skill = (BYTE)SkillNumber;  // Original: single byte
 
 	pMsg.x = (BYTE)gObj[bIndex].X;
 

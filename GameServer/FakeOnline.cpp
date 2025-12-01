@@ -5,6 +5,9 @@
 #define DG_MAP_RANGE(x) ((x) == 53)
 #define IG_MAP_RANGE(x) ((x) == 55)
 
+
+
+
 #include "stdafx.h"
 #include "FakeOnline.h"
 #include "ItemManager.h"
@@ -44,6 +47,8 @@
 #include "User.h"
 #include "Item.h"
 #include "pugixml.hpp"
+
+
 
 #if USE_FAKE_ONLINE == TRUE
 
@@ -696,6 +701,21 @@ void FakeAutoRepair(int aIndex)
 
 	LPOBJ lpObj = &gObj[aIndex];
 
+
+	// Safety check: Ensure inventory is allocated
+
+
+	if (lpObj->Inventory == NULL || lpObj->Inventory1 == NULL)
+
+
+	{
+
+
+		return;
+
+
+	}
+
 	for (int n = 0; n < INVENTORY_WEAR_SIZE; ++n)
 	{
 		if (lpObj->Inventory[n].IsItem() != 0)
@@ -741,47 +761,34 @@ void CFakeOnline::Attack(int aIndex)
 	LPOBJ lpObj = &gObj[aIndex];
 
 	if (lpObj->IsFakeOnline == 0)
+	{
+		return;
+	}
 
+	// Safety check: Ensure viewport is allocated
+	if (lpObj->VpPlayer2 == NULL)
+	{
+		LogAdd(LOG_RED, "[FakeOnline][ERROR] Bot %s has NULL VpPlayer2!", lpObj->Name);
+		return;
+	}
+
+	// Safety check: Ensure skill array is allocated
+
+
+
+	if (lpObj->Skill == NULL)
 
 
 	{
+
+
+		LogAdd(LOG_RED, "[FakeOnline][ERROR] Bot %s has NULL Skill array!", lpObj->Name);
 
 
 		return;
 
 
 	}
-
-
-
-
-
-	// Debug: Log attack function entry every 10 seconds
-
-
-	static DWORD lastDebugTime = 0;
-
-
-	if (GetTickCount() - lastDebugTime > 10000)
-
-
-	{
-
-
-		LogAdd(LOG_BLACK, "[FakeOnline][DEBUG] Attack called for %s, IsFakeRegen=%d, State=%d, Live=%d",
-
-
-			lpObj->Name, lpObj->IsFakeRegen, lpObj->State, lpObj->Live);
-
-
-		lastDebugTime = GetTickCount();
-
-
-	}
-
-
-
-
 
 	if (!lpObj->IsFakeRegen)
 	{
@@ -794,19 +801,26 @@ void CFakeOnline::Attack(int aIndex)
 
 	if (gServerInfo->InSafeZone(aIndex) == true)
 	{
-		//this->OnHelperpAlreadyConnected(lpObj);
 		return;
 	}
 
+	// DEBUG: Log attack start
+
+
+	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] Attack START for %s", lpObj->Name);
+
 
 	this->SuDungMauMana(aIndex);
+	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] SuDungMauMana OK");
 
 	this->TuDongBuffSkill(aIndex);
+	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] TuDongBuffSkill OK");
 
 	this->TuDongDanhSkill(aIndex);
+	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] TuDongDanhSkill OK");
 
-	FakeAutoRepair(aIndex);
-	//LogAdd(LOG_RED,"Fake Online Attack OK");
+	//FakeAutoRepair(aIndex);
+	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] Attack END for %s", lpObj->Name);
 }
 
 
@@ -1123,7 +1137,44 @@ void CFakeOnline::QuayLaiToaDoGoc(int aIndex)
 		}
 		if (GetTickCount() >= lpObj->m_OfflineTimeResetMove + 2000)
 		{
-			if ((PhamViDiTrain >= (lpObj->IsFakeMoveRange + 5) && !lpObj->IsFakeRegen) || gServerInfo->InSafeZone(lpObj->Index) == true)
+			bool inSafeZone = (gServerInfo->InSafeZone(lpObj->Index) == true);
+
+
+
+			bool farFromDest = (PhamViDiTrain >= (lpObj->IsFakeMoveRange + 5));
+
+
+
+
+
+			// Debug log every 10 seconds
+
+
+			static DWORD lastDebugMove = 0;
+
+
+			if (GetTickCount() - lastDebugMove > 10000)
+
+
+			{
+
+
+				LogAdd(LOG_RED, "[FakeOnline][DEBUG] %s Pos(%d,%d) Dest(%d,%d) Dist=%d MoveRange=%d InSafe=%d FarFromDest=%d IsFakeRegen=%d",
+
+
+					lpObj->Name, lpObj->X, lpObj->Y, info->MapX, info->MapY, PhamViDiTrain, lpObj->IsFakeMoveRange, inSafeZone, farFromDest, lpObj->IsFakeRegen);
+
+
+				lastDebugMove = GetTickCount();
+
+
+			}
+
+
+
+
+
+			if ((farFromDest && !lpObj->IsFakeRegen) || inSafeZone)
 			{
 				int DiChuyenX = lpObj->X;
 				int DiChuyenY = lpObj->Y;
@@ -1151,6 +1202,12 @@ void CFakeOnline::QuayLaiToaDoGoc(int aIndex)
 
 			}
 			else if (!lpObj->IsFakeRegen) {
+
+				// Bot reached destination area - enable attack mode
+
+
+
+				LogAdd(LOG_RED, "[FakeOnline][%s] Reached destination - Setting IsFakeRegen=TRUE", lpObj->Name);
 
 				lpObj->m_OfflineTimeResetMove = GetTickCount();
 				lpObj->IsFakeRegen = true;
@@ -1344,7 +1401,11 @@ void CFakeOnline::TuDongBuffSkill(int aIndex)	//-- OK
 		CSkill* RenderBuff;
 		for (int n = 0; n < 3; n++)
 		{
-			if (lpObj->BuffSkill[n] > 0)
+			// FIX: Check for valid skill ID (skip -1/65535 and 0)
+
+
+
+			if (lpObj->BuffSkill[n] > 0 && lpObj->BuffSkill[n] < 500)
 			{
 				RenderBuff = gSkillManager->GetSkill(lpObj, lpObj->BuffSkill[n]);
 
@@ -1439,13 +1500,14 @@ bool CFakeOnline::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterInd
 
 	{
 
-
+		LogAdd(LOG_RED, "[GetTargetMonster] VpPlayer2 is NULL!");
 		return 0;
 
 
 	}
 
 	int NearestDistance = 100;
+	int monstersFound = 0;
 
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
@@ -1453,6 +1515,8 @@ bool CFakeOnline::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterInd
 		{
 			continue;
 		}
+
+		monstersFound++;
 
 		if (gSkillManager->CheckSkillTarget(lpObj, lpObj->VpPlayer2[n].index, -1, lpObj->VpPlayer2[n].type) == 0)
 		{
@@ -1477,6 +1541,20 @@ bool CFakeOnline::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterInd
 			NearestDistance = gObjCalcDistance(lpObj, &gObj[lpObj->VpPlayer2[n].index]);
 			continue;
 		}
+	}
+
+	// DEBUG: Log results
+
+
+	if (NearestDistance == 100)
+
+
+	{
+
+
+		LogAdd(LOG_BLUE, "[GetTargetMonster] No valid target. MonstersInViewport=%d", monstersFound);
+
+
 	}
 
 	return ((NearestDistance == 100) ? 0 : 1);
@@ -1568,6 +1646,21 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 
 	if (lpObj->IsFakeOnline == 0)
+
+
+	{
+
+
+		return;
+
+
+	}
+
+	// Safety check: Ensure viewport is allocated
+
+
+
+	if (lpObj->VpPlayer2 == NULL)
 
 
 	{
@@ -1728,10 +1821,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 						pMsg.header.set(0x1E, sizeof(pMsg));
 
-
-						pMsg.skill[0] = SET_NUMBERHB(SkillRender->m_index);
-
-						pMsg.skill[1] = SET_NUMBERLB(SkillRender->m_index);
+						pMsg.skill = (BYTE)SkillRender->m_index;  // Original: single byte
 
 						pMsg.x = (BYTE)gObj[KillUser].X;
 
@@ -1769,13 +1859,27 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 		return;
 	}
 	//=============================================================
+	
+	// DEBUG: Log monster search
+
+
+
+	LogAdd(LOG_BLUE, "[TuDongDanhSkill][DEBUG] %s searching for monsters, VpCount2=%d", lpObj->Name, lpObj->VPCount2);
+
+	
 	if (this->GetTargetMonster(lpObj, SkillRender->m_index, &tObjNum) != 0)
 	{
+
+
+		LogAdd(LOG_BLUE, "[TuDongDanhSkill][DEBUG] Found monster target: %d (%s)", tObjNum, gObj[tObjNum].Name);
 
 		atacar = 0;
 
 		if (gObj[tObjNum].Live == 0 || gObj[tObjNum].State == OBJECT_EMPTY || gObj[tObjNum].RegenType != 0)
 		{
+
+			LogAdd(LOG_BLUE, "[TuDongDanhSkill][DEBUG] Monster invalid state, skipping");
+
 			return;
 		}
 
@@ -1888,9 +1992,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 						pMsg.header.set(0x1E, sizeof(pMsg));
 
 
-						pMsg.skill[0] = SET_NUMBERHB(SkillRender->m_index);
-
-						pMsg.skill[1] = SET_NUMBERLB(SkillRender->m_index);
+						pMsg.skill = (BYTE)SkillRender->m_index;  // Original: single byte
 
 
 						pMsg.x = (BYTE)gObj[tObjNum].X;
@@ -2029,9 +2131,7 @@ void CFakeOnline::SendDurationSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumb
 	pMsg.header.set(0x1E, sizeof(pMsg));
 
 
-	pMsg.skill[0] = SET_NUMBERHB(SkillNumber);
-
-	pMsg.skill[1] = SET_NUMBERLB(SkillNumber);
+	pMsg.skill = (BYTE)SkillNumber;  // Original: single byte
 
 
 	pMsg.x = (BYTE)gObj[aIndex].X;

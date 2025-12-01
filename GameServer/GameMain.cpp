@@ -192,15 +192,26 @@ void CALLBACK QueueTimerCallback(PVOID lpParameter,BOOLEAN TimerOrWaitFired) // 
 				g_OfflineMode.regresar(n);
 
 #if USE_FAKE_ONLINE == TRUE
-				s_FakeOnline.Attack(n);
-				s_FakeOnline.TuDongBuffSkill(n);
-				s_FakeOnline.SuDungMauMana(n);
-				s_FakeOnline.QuayLaiToaDoGoc(n);
-				s_FakeOnline.NhatItem(n);
-				s_FakeOnline.TuDongDanhSkill(n);
-				// --- NUEVA LLAMADA ---
-				s_FakeOnline.AttemptRandomBotComment(n);
-				// --- FIN NUEVA LLAMADA ---
+				// FIX: Attack() already calls SuDungMauMana, TuDongBuffSkill, TuDongDanhSkill internally
+
+
+
+	// So we should NOT call them separately to avoid duplicate calls
+
+
+	// Order: First update position (QuayLaiToaDoGoc), then attack
+
+
+				s_FakeOnline.QuayLaiToaDoGoc(n);  // Update position and IsFakeRegen state
+
+
+				s_FakeOnline.Attack(n);           // Attack (includes buff, mana, skill)
+
+
+				s_FakeOnline.NhatItem(n);         // Pick up items
+
+
+				s_FakeOnline.AttemptRandomBotComment(n);  // Random chat
 #endif
 
 
