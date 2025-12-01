@@ -4844,7 +4844,7 @@ void CSkillManager::CGSkillTeleportAllyRecv(PMSG_SKILL_TELEPORT_ALLY_RECV* lpMsg
 
 void CSkillManager::GCSkillAttackSend(LPOBJ lpObj,int skill,int aIndex,BYTE type) // OK
 {
-	if(lpObj->Type == OBJECT_USER && gHackSkillSpeedCheck->CheckSkillSpeed(lpObj->Index,skill) == 0)
+	if (lpObj->Type == OBJECT_USER && lpObj->IsFakeOnline == 0 && gHackSkillSpeedCheck->CheckSkillSpeed(lpObj->Index, skill) == 0)
 	{
 		return;
 	}
@@ -4892,7 +4892,7 @@ void CSkillManager::GCSkillCancelSend(LPOBJ lpObj,int skill) // OK
 
 void CSkillManager::GCDurationSkillAttackSend(LPOBJ lpObj,int skill,BYTE x,BYTE y,BYTE dir) // OK
 {
-	if(lpObj->Type == OBJECT_USER && gHackSkillSpeedCheck->CheckSkillSpeed(lpObj->Index,skill) == 0)
+	if (lpObj->Type == OBJECT_USER && lpObj->IsFakeOnline == 0 && gHackSkillSpeedCheck->CheckSkillSpeed(lpObj->Index, skill) == 0)
 	{
 		return;
 	}

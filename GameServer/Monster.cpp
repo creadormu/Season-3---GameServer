@@ -914,9 +914,9 @@ void gObjMonsterMagicAttack(LPOBJ lpObj,int skill) // OK
 
 	int size = sizeof(pMsg);
 
-	pMsg.skill[0] = SET_NUMBERHB(1);
+	pMsg.skill[0] = SET_NUMBERHB(0);
 
-	pMsg.skill[1] = SET_NUMBERLB(1);
+	pMsg.skill[1] = SET_NUMBERLB(0);
 
 	pMsg.x = (BYTE)lpObj->X;
 
