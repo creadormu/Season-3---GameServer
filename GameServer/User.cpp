@@ -618,6 +618,19 @@ void gObjCharZeroSet(int aIndex) // OK
 	lpObj->UsePartyMatching = 0;
 	lpObj->UsePartyMatchingJoin = 0;
 
+	// Initialize FakeOnline flags to 0 for real players
+#if USE_FAKE_ONLINE == TRUE
+	lpObj->IsFakeOnline = 0;
+	lpObj->FakeOnline = 0;
+	lpObj->m_OfflineMoveDelay = 0;
+	lpObj->IsFakeRegen = false;
+	lpObj->IsFakePVPMode = 0;
+	lpObj->IsFakePartyMode = 0;
+	lpObj->IsFakeMoveRange = 0;
+	lpObj->IsFakeTimeLag = 0;
+	lpObj->IsFakeSendParty = 0;
+#endif
+
 	memset(lpObj->CashShopTransaction,0,sizeof(lpObj->CashShopTransaction));
 
 	memset(lpObj->CommandManagerTransaction,0,sizeof(lpObj->CommandManagerTransaction));

@@ -492,16 +492,40 @@ void FakeAnimationMove(int aIndex, int x, int y, bool dixa)
 
 	gMap[map_num].DelStandAttr(oldX, oldY);
 
-	// Set new position
-	lpObj->X = x;
-	lpObj->Y = y;
-	lpObj->TX = x;
-	lpObj->TY = y;
-	lpObj->OldX = x;
-	lpObj->OldY = y;
+	// Handle random movement if dixa is true
+	if (dixa == true) {
+		int RandX = rand() % 3 + 1;
+		int RandY = rand() % 3 + 1;
+		if (x > lpObj->X) {
+			BYTE attr = gMap[map_num].GetAttr(lpObj->X + RandX, lpObj->Y);
+			if ((attr & 1) == 0) lpObj->X += RandX;
+		}
+		else if (x < lpObj->X) {
+			BYTE attr = gMap[map_num].GetAttr(lpObj->X - RandX, lpObj->Y);
+			if ((attr & 1) == 0) lpObj->X -= RandX;
+		}
+		if (y > lpObj->Y) {
+			BYTE attr = gMap[map_num].GetAttr(lpObj->X, lpObj->Y + RandY);
+			if ((attr & 1) == 0) lpObj->Y += RandY;
+		}
+		else if (y < lpObj->Y) {
+			BYTE attr = gMap[map_num].GetAttr(lpObj->X, lpObj->Y - RandY);
+			if ((attr & 1) == 0) lpObj->Y -= RandY;
+		}
+	}
+	else {
+		// Direct position set
+		lpObj->X = x;
+		lpObj->Y = y;
+	}
+
+	lpObj->TX = lpObj->X;
+	lpObj->TY = lpObj->Y;
+	lpObj->OldX = lpObj->X;
+	lpObj->OldY = lpObj->Y;
 	lpObj->ViewState = 0;
 
-	gMap[map_num].SetStandAttr(x, y);
+	gMap[map_num].SetStandAttr(lpObj->X, lpObj->Y);
 
 	// Send movement packet to players in viewport
 	PMSG_MOVE_SEND pMsg;
@@ -511,8 +535,8 @@ void FakeAnimationMove(int aIndex, int x, int y, bool dixa)
 	pMsg.index[0] = SET_NUMBERHB(lpObj->Index);
 	pMsg.index[1] = SET_NUMBERLB(lpObj->Index);
 
-	pMsg.x = (BYTE)x;
-	pMsg.y = (BYTE)y;
+	pMsg.x = (BYTE)lpObj->X;
+	pMsg.y = (BYTE)lpObj->Y;
 	pMsg.dir = lpObj->Dir << 4;
 
 	for (int n = 0; n < MAX_VIEWPORT; n++)
@@ -991,6 +1015,12 @@ void CFakeOnline::SuDungMauMana(int aIndex)	//-- OK
 
 	LPOBJ lpObj = &gObj[aIndex];
 
+	// Only run for FakeOnline bots
+	if (lpObj->IsFakeOnline == 0)
+	{
+		return;
+	}
+
 	//-- AUTO POTION HP
 	if (lpObj->RecoveryPotionOn != 0)
 	{
@@ -1046,6 +1076,13 @@ void CFakeOnline::TuDongBuffSkill(int aIndex)	//-- OK
 		return;
 	}
 	LPOBJ lpObj = &gObj[aIndex];
+
+	// Only run for FakeOnline bots
+	if (lpObj->IsFakeOnline == 0)
+	{
+		return;
+	}
+
 	LPOBJ lpTarget;
 
 	if (gServerInfo->InSafeZone(aIndex) == true)
@@ -1246,6 +1283,12 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 	}
 
 	LPOBJ lpObj = &gObj[aIndex];
+
+	// Only run for FakeOnline bots
+	if (lpObj->IsFakeOnline == 0)
+	{
+		return;
+	}
 	int caminar = 0;
 	int distance = (lpObj->HuntingRange > 6) ? 6 : lpObj->HuntingRange;
 
@@ -1999,8 +2042,7 @@ void CFakeOnline::AttemptRandomBotComment(int aIndex)
 		if (!phrase.empty()) {
 			char msg[256];
 			strncpy_s(msg, phrase.c_str(), _TRUNCATE);
-			// FIX: Changed from CCommandManager.CommandPost to gCommandManager.CommandPost
-			gCommandManager->CommandPost(lpObj, msg);
+			if (gCommandManager->CommandPost(lpObj, msg)) {
 				this->m_dwLastCommentTick[aIndex] = GetTickCount();
 			}
 		}
