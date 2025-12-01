@@ -577,6 +577,12 @@ void FakeAutoRepair(int aIndex)
 	}
 
 	LPOBJ lpObj = &gObj[aIndex];
+	
+	// Safety check: Ensure inventory is allocated
+	if (lpObj->Inventory == NULL || lpObj->Inventory1 == NULL)
+	{
+		return;
+	}
 
 	for (int n = 0; n < INVENTORY_WEAR_SIZE; ++n)
 	{
