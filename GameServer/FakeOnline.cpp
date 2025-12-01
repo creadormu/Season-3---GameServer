@@ -430,9 +430,17 @@ void FakeAnimationMove(int aIndex, int x, int y, bool dixa)
 {
 	LPOBJ lpObj = &gObj[aIndex];
 
-	int map_num = gObj[aIndex].Map;
+	if (OBJECT_RANGE(aIndex) == 0)
+	{
+		return;
+	}
 
-	BYTE path[8];
+	int map_num = lpObj->Map;
+
+	if (MAP_RANGE(map_num) == 0)
+	{
+		return;
+	}
 
 	if (lpObj->RegenOk > 0)
 	{
@@ -449,11 +457,6 @@ void FakeAnimationMove(int aIndex, int x, int y, bool dixa)
 		return;
 	}
 
-	/*if ((GetTickCount() - lpObj->LastMoveTime) < 100)
-	{
-	return;
-	}*/
-
 	if (gEffectManager->CheckStunEffect(lpObj) != 0 || gEffectManager->CheckImmobilizeEffect(lpObj) != 0)
 	{
 		return;
@@ -465,119 +468,103 @@ void FakeAnimationMove(int aIndex, int x, int y, bool dixa)
 		gNotice->GCNoticeSend(lpObj->Index, 1, 0, 0, 0, 0, 0, gMessage->GetMessageA(272));
 	}
 
-	lpObj->Dir = path[0] >> 4;
+	// Store old position for map attribute update
+	int oldX = lpObj->X;
+	int oldY = lpObj->Y;
+
+	// Simple direct teleport for bots - no path calculation needed
+	lpObj->Dir = 0;
 	lpObj->Rest = 0;
 	lpObj->PathCur = 0;
-	lpObj->PathCount = path[0] & 0x0F;
+	lpObj->PathCount = 0;
 	lpObj->LastMoveTime = GetTickCount();
 
 	memset(lpObj->PathX, 0, sizeof(lpObj->PathX));
-
 	memset(lpObj->PathY, 0, sizeof(lpObj->PathY));
-
 	memset(lpObj->PathOri, 0, sizeof(lpObj->PathOri));
 
 	lpObj->TX = x;
 	lpObj->TY = y;
-	lpObj->PathCur = ((lpObj->PathCount > 0) ? 1 : 0);
-	lpObj->PathCount = ((lpObj->PathCount > 0) ? (lpObj->PathCount + 1) : lpObj->PathCount);
 	lpObj->PathStartEnd = 1;
 	lpObj->PathX[0] = x;
 	lpObj->PathY[0] = y;
 	lpObj->PathDir[0] = lpObj->Dir;
 
-	for (int n = 1; n < lpObj->PathCount; n++)
-	{
-		if ((n % 2) == 0)
-		{
-			lpObj->TX = lpObj->PathX[n - 1] + RoadPathTable[((path[((n + 1) / 2)] & 0x0F) * 2) + 0];
-			lpObj->TY = lpObj->PathY[n - 1] + RoadPathTable[((path[((n + 1) / 2)] & 0x0F) * 2) + 1];
-			lpObj->PathX[n] = lpObj->PathX[n - 1] + RoadPathTable[((path[((n + 1) / 2)] & 0x0F) * 2) + 0];
-			lpObj->PathY[n] = lpObj->PathY[n - 1] + RoadPathTable[((path[((n + 1) / 2)] & 0x0F) * 2) + 1];
-			lpObj->PathOri[n - 1] = path[((n + 1) / 2)] & 0x0F;
-			lpObj->PathDir[n + 0] = path[((n + 1) / 2)] & 0x0F;
-		}
-		else
-		{
-			lpObj->TX = lpObj->PathX[n - 1] + RoadPathTable[((path[((n + 1) / 2)] / 0x10) * 2) + 0];
-			lpObj->TY = lpObj->PathY[n - 1] + RoadPathTable[((path[((n + 1) / 2)] / 0x10) * 2) + 1];
-			lpObj->PathX[n] = lpObj->PathX[n - 1] + RoadPathTable[((path[((n + 1) / 2)] / 0x10) * 2) + 0];
-			lpObj->PathY[n] = lpObj->PathY[n - 1] + RoadPathTable[((path[((n + 1) / 2)] / 0x10) * 2) + 1];
-			lpObj->PathOri[n - 1] = path[((n + 1) / 2)] / 0x10;
-			lpObj->PathDir[n + 0] = path[((n + 1) / 2)] / 0x10;
-		}
-	}
-	gMap[lpObj->Map].DelStandAttr(lpObj->OldX, lpObj->OldY);
+	gMap[map_num].DelStandAttr(oldX, oldY);
+
+	// Handle random movement if dixa is true
 	if (dixa == true) {
 		int RandX = rand() % 3 + 1;
 		int RandY = rand() % 3 + 1;
-		BYTE wall = 0;
+		int newX = lpObj->X;
+		int newY = lpObj->Y;
+
 		if (x > lpObj->X) {
-			// WITH THIS:
-			BYTE attr = gMap[lpObj->Map].GetAttr(lpObj->X + RandX, lpObj->Y);
-			if ((attr & 1) == 0) lpObj->X += RandX;
+			newX = lpObj->X + RandX;
 		}
-		else if (x <  lpObj->X) {
-			// WITH THIS:
-			BYTE attr = gMap[lpObj->Map].GetAttr(lpObj->X + RandX, lpObj->Y);
-			if ((attr & 1) == 0) lpObj->X += RandX;
-		}
-		if (y > lpObj->Y) {
-			// WITH THIS:
-			BYTE attr = gMap[lpObj->Map].GetAttr(lpObj->X + RandY, lpObj->Y);
-			if ((attr & 1) == 0) lpObj->X += RandY;
-		}
-		else if (y <  lpObj->Y) {
-			BYTE attr = gMap[lpObj->Map].GetAttr(lpObj->X - RandY, lpObj->Y);
-			if ((attr & 1) == 0) lpObj->X += RandY;
+		else if (x < lpObj->X) {
+			newX = lpObj->X - RandX;
 		}
 
+		if (y > lpObj->Y) {
+			newY = lpObj->Y + RandY;
+		}
+		else if (y < lpObj->Y) {
+			newY = lpObj->Y - RandY;
+		}
+
+		// Bounds check for coordinates (map is typically 256x256)
+		if (newX >= 0 && newX < 256 && newY >= 0 && newY < 256) {
+			BYTE attr = gMap[map_num].GetAttr(newX, newY);
+			if ((attr & 1) == 0) {
+				lpObj->X = newX;
+				lpObj->Y = newY;
+			}
+		}
 	}
 	else {
-		lpObj->X = x;
-		lpObj->Y = y;
+		// Direct position set with bounds check
+		if (x >= 0 && x < 256 && y >= 0 && y < 256) {
+			lpObj->X = x;
+			lpObj->Y = y;
+		}
 	}
 
-	//lpObj->Y = y;
-	lpObj->TX = lpObj->TX;
-	lpObj->TY = lpObj->TY;
-	lpObj->OldX = lpObj->TX;
-	lpObj->OldY = lpObj->TY;
+	lpObj->TX = lpObj->X;
+	lpObj->TY = lpObj->Y;
+	lpObj->OldX = lpObj->X;
+	lpObj->OldY = lpObj->Y;
 	lpObj->ViewState = 0;
 
-	gMap[lpObj->Map].SetStandAttr(lpObj->TX, lpObj->TY);
+	gMap[map_num].SetStandAttr(lpObj->X, lpObj->Y);
 
+	// Send movement packet to players in viewport
 	PMSG_MOVE_SEND pMsg;
 
 	pMsg.header.set(PROTOCOL_CODE1, sizeof(pMsg));
 
 	pMsg.index[0] = SET_NUMBERHB(lpObj->Index);
-
 	pMsg.index[1] = SET_NUMBERLB(lpObj->Index);
 
-	pMsg.x = (BYTE)lpObj->TX;
-
-	pMsg.y = (BYTE)lpObj->TY;
-
+	pMsg.x = (BYTE)lpObj->X;
+	pMsg.y = (BYTE)lpObj->Y;
 	pMsg.dir = lpObj->Dir << 4;
 
-	//if (!gObjPositionCheck(lpObj))
+	// Safety check: ensure VpPlayer2 is valid before iterating
+	if (lpObj->VpPlayer2 == NULL)
 	{
-		lpObj->PathCur = 0;
-		lpObj->PathCount = 0;
-		lpObj->TX = lpObj->X;
-		lpObj->TY = lpObj->Y;
-		pMsg.x = (BYTE)lpObj->X;
-		pMsg.y = (BYTE)lpObj->Y;
+		LogAdd(LOG_RED, "[FakeOnline][ERROR] VpPlayer2 is NULL for bot %s", lpObj->Name);
+		return;
 	}
 
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
-		if (lpObj->VpPlayer2[n].type == OBJECT_USER)
+		if (lpObj->VpPlayer2[n].type == OBJECT_USER && lpObj->VpPlayer2[n].state != VIEWPORT_NONE)
 		{
-			if (lpObj->VpPlayer2[n].state != OBJECT_EMPTY && lpObj->VpPlayer2[n].state != OBJECT_DIECMD && lpObj->VpPlayer2[n].state != OBJECT_DIED)
+			int viewIndex = lpObj->VpPlayer2[n].index;
+			if (OBJECT_RANGE(viewIndex) != 0 && gObj[viewIndex].Connected == OBJECT_ONLINE && gObj[viewIndex].IsFakeOnline == 0)
 			{
-				DataSend(lpObj->VpPlayer2[n].index, (BYTE*)&pMsg, pMsg.header.size);
+				DataSend(viewIndex, (BYTE*)&pMsg, pMsg.header.size);
 			}
 		}
 	}
@@ -635,7 +622,21 @@ void CFakeOnline::Attack(int aIndex)
 
 	LPOBJ lpObj = &gObj[aIndex];
 
-	if (lpObj->IsFakeOnline == 0 || !lpObj->IsFakeRegen)
+	if (lpObj->IsFakeOnline == 0)
+	{
+		return;
+	}
+
+	// Debug: Log attack function entry every 10 seconds
+	static DWORD lastDebugTime = 0;
+	if (GetTickCount() - lastDebugTime > 10000)
+	{
+		LogAdd(LOG_BLACK, "[FakeOnline][DEBUG] Attack called for %s, IsFakeRegen=%d, State=%d, Live=%d",
+			lpObj->Name, lpObj->IsFakeRegen, lpObj->State, lpObj->Live);
+		lastDebugTime = GetTickCount();
+	}
+
+	if (!lpObj->IsFakeRegen)
 	{
 		return;
 	}
@@ -913,6 +914,18 @@ void CFakeOnline::QuayLaiToaDoGoc(int aIndex)
 		return;
 	}
 
+	// Debug: Check for invalid states
+	if (lpObj->Connected < OBJECT_LOGGED)
+	{
+		LogAdd(LOG_RED, "[FakeOnline][ERROR] QuayLaiToaDoGoc: Bot %s has invalid Connected state: %d", lpObj->Name, lpObj->Connected);
+		return;
+	}
+
+	if (!MAP_RANGE(lpObj->Map))
+	{
+		LogAdd(LOG_RED, "[FakeOnline][ERROR] QuayLaiToaDoGoc: Bot %s has invalid Map: %d", lpObj->Name, lpObj->Map);
+		return;
+	}
 
 	OFFEXP_DATA *info = s_FakeOnline.GetOffExpInfo(lpObj);
 	if (info != 0 && lpObj->Socket == INVALID_SOCKET)
@@ -985,26 +998,28 @@ void CFakeOnline::QuayLaiToaDoGoc(int aIndex)
 				//======Move Range======//
 				int maxmoverange = MoveRange * 2 + 1;
 				int searchc = 10;
-				BYTE tpx;
-				BYTE tpy;
+
 				while (searchc-- != 0)
 				{
-					__try
-					{
-						tpx = (lpObj->X - MoveRange) + (BYTE)(GetLargeRand() % maxmoverange);
-						tpy = (lpObj->Y - MoveRange) + (BYTE)(GetLargeRand() % maxmoverange);
-					}
-					__except (maxmoverange = 1, 1)
-					{
+					// Use int for calculations to avoid overflow/underflow
+					int randX = GetLargeRand() % maxmoverange;
+					int randY = GetLargeRand() % maxmoverange;
+					int tpx = lpObj->X - MoveRange + randX;
+					int tpy = lpObj->Y - MoveRange + randY;
 
+					// Bounds check - ensure coordinates are valid (0-255)
+					if (tpx < 0 || tpx > 255 || tpy < 0 || tpy > 255)
+					{
+						continue; // Skip invalid coordinates
 					}
+
 					BYTE attr = gMap[lpObj->Map].GetAttr(tpx, tpy);
 					//LogAdd(LOG_BLUE,"[FakeOnline]DEBUG MOVE RANGE 1");
 					if ((attr & 1) != 1 && (attr & 2) != 2 && (attr & 4) != 4 && (attr & 8) != 8 && GetTickCount() >= lpObj->m_OfflineMoveDelay + 2000)
 					{
 						LogAdd(LOG_BLUE, "[FakeOnline] Rango de movimiento (%d,%d)", tpx, tpy);
 						lpObj->m_OfflineMoveDelay = GetTickCount();
-						FakeAnimationMove(lpObj->Index, tpx, tpy, false);
+						FakeAnimationMove(lpObj->Index, (BYTE)tpx, (BYTE)tpy, false);
 						return;
 
 					}
@@ -1045,6 +1060,12 @@ void CFakeOnline::SuDungMauMana(int aIndex)	//-- OK
 	}
 
 	LPOBJ lpObj = &gObj[aIndex];
+
+	// Only run for FakeOnline bots
+	if (lpObj->IsFakeOnline == 0)
+	{
+		return;
+	}
 
 	//-- AUTO POTION HP
 	if (lpObj->RecoveryPotionOn != 0)
@@ -1101,6 +1122,13 @@ void CFakeOnline::TuDongBuffSkill(int aIndex)	//-- OK
 		return;
 	}
 	LPOBJ lpObj = &gObj[aIndex];
+
+	// Only run for FakeOnline bots
+	if (lpObj->IsFakeOnline == 0)
+	{
+		return;
+	}
+
 	LPOBJ lpTarget;
 
 	if (gServerInfo->InSafeZone(aIndex) == true)
@@ -1198,6 +1226,12 @@ void CFakeOnline::TuDongBuffSkill(int aIndex)	//-- OK
 
 bool CFakeOnline::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterIndex) // OK
 {
+	// Safety check for VpPlayer2
+	if (lpObj->VpPlayer2 == NULL)
+	{
+		return 0;
+	}
+
 	int NearestDistance = 100;
 
 	for (int n = 0; n < MAX_VIEWPORT; n++)
@@ -1237,6 +1271,12 @@ bool CFakeOnline::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterInd
 
 bool CFakeOnline::GetTargetPlayer(LPOBJ lpObj, int SkillNumber, int* MonsterIndex) // OK
 {
+	// Safety check for VpPlayer2
+	if (lpObj->VpPlayer2 == NULL)
+	{
+		return 0;
+	}
+
 	int NearestDistance = 100;
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
@@ -1301,6 +1341,12 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 	}
 
 	LPOBJ lpObj = &gObj[aIndex];
+
+	// Only run for FakeOnline bots
+	if (lpObj->IsFakeOnline == 0)
+	{
+		return;
+	}
 	int caminar = 0;
 	int distance = (lpObj->HuntingRange > 6) ? 6 : lpObj->HuntingRange;
 
@@ -1451,19 +1497,9 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 						pMsg.header.set(0x1E, sizeof(pMsg));
 
-#if(GAMESERVER_UPDATE>=701)
-
-						pMsg.skillH = SET_NUMBERHB(0);
-
-						pMsg.skillL = SET_NUMBERLB((((GetLargeRand() % 100) >= 25) ? 1 : 0));
-
-#else
-
 						pMsg.skill[0] = SET_NUMBERHB(SkillRender->m_index);
 
 						pMsg.skill[1] = SET_NUMBERLB(SkillRender->m_index);
-
-#endif
 
 						pMsg.x = (BYTE)gObj[KillUser].X;
 
@@ -1475,19 +1511,9 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 						pMsg.angle = (gSkillManager->GetSkillAngle(lpObj->X, lpObj->Y, gObj[KillUser].X, gObj[KillUser].Y) * 255) / 360;
 
-#if(GAMESERVER_UPDATE>=803)
-
-						pMsg.indexH = SET_NUMBERHB(lpObj->TargetNumber);
-
-						pMsg.indexL = SET_NUMBERLB(lpObj->TargetNumber);
-
-#else
-
 						pMsg.index[0] = SET_NUMBERHB(KillUser);
 
 						pMsg.index[1] = SET_NUMBERLB(KillUser);
-
-#endif
 
 						pMsg.MagicKey = 0;
 
@@ -1627,19 +1653,9 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 						pMsg.header.set(0x1E, sizeof(pMsg));
 
-#if(GAMESERVER_UPDATE>=701)
-
-						pMsg.skillH = SET_NUMBERHB(0);
-
-						pMsg.skillL = SET_NUMBERLB((((GetLargeRand() % 100) >= 25) ? 1 : 0));
-
-#else
-
 						pMsg.skill[0] = SET_NUMBERHB(SkillRender->m_index);
 
 						pMsg.skill[1] = SET_NUMBERLB(SkillRender->m_index);
-
-#endif
 
 						pMsg.x = (BYTE)gObj[tObjNum].X;
 
@@ -1651,19 +1667,9 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 						pMsg.angle = (gSkillManager->GetSkillAngle(lpObj->X, lpObj->Y, gObj[tObjNum].X, gObj[tObjNum].Y) * 255) / 360;
 
-#if(GAMESERVER_UPDATE>=803)
-
-						pMsg.indexH = SET_NUMBERHB(lpObj->TargetNumber);
-
-						pMsg.indexL = SET_NUMBERLB(lpObj->TargetNumber);
-
-#else
-
 						pMsg.index[0] = SET_NUMBERHB(tObjNum);
 
 						pMsg.index[1] = SET_NUMBERLB(tObjNum);
-
-#endif
 
 						pMsg.MagicKey = 0;
 
@@ -1720,6 +1726,12 @@ void CFakeOnline::SendMultiSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber)
 		return;
 	}
 
+	// Safety check for VpPlayer2
+	if (lpObj->VpPlayer2 == NULL)
+	{
+		return;
+	}
+
 	int attackCount = 0;
 
 	for (int n = 0; n < MAX_VIEWPORT; n++)
@@ -1770,19 +1782,9 @@ void CFakeOnline::SendDurationSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumb
 
 	pMsg.header.set(0x1E, sizeof(pMsg));
 
-#if(GAMESERVER_UPDATE>=701)
-
-	pMsg.skillH = SET_NUMBERHB(SkillNumber);
-
-	pMsg.skillL = SET_NUMBERLB(SkillNumber);
-
-#else
-
 	pMsg.skill[0] = SET_NUMBERHB(SkillNumber);
 
 	pMsg.skill[1] = SET_NUMBERLB(SkillNumber);
-
-#endif
 
 	pMsg.x = (BYTE)gObj[aIndex].X;
 
@@ -1794,19 +1796,9 @@ void CFakeOnline::SendDurationSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumb
 
 	pMsg.angle = (gSkillManager->GetSkillAngle(lpObj->X, lpObj->Y, gObj[aIndex].X, gObj[aIndex].Y) * 255) / 360;
 
-#if(GAMESERVER_UPDATE>=803)
-
-	pMsg.indexH = SET_NUMBERHB(aIndex);
-
-	pMsg.indexL = SET_NUMBERLB(aIndex);
-
-#else
-
 	pMsg.index[0] = SET_NUMBERHB(aIndex);
 
 	pMsg.index[1] = SET_NUMBERLB(aIndex);
-
-#endif
 
 	pMsg.MagicKey = 0;
 	lpObj->IsFakeTimeLag = GetTickCount();
@@ -1831,18 +1823,6 @@ void CFakeOnline::SendRFSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber) //
 
 	pMsg.header.set(0x19, sizeof(pMsg));
 
-#if(GAMESERVER_UPDATE>=701)
-
-	pMsg.skillH = SET_NUMBERHB(SkillNumber);
-
-	pMsg.skillL = SET_NUMBERLB(SkillNumber);
-
-	pMsg.indexH = SET_NUMBERHB(aIndex);
-
-	pMsg.indexL = SET_NUMBERLB(aIndex);
-
-#else
-
 	pMsg.skill[0] = SET_NUMBERHB(SkillNumber);
 
 	pMsg.skill[1] = SET_NUMBERLB(SkillNumber);
@@ -1850,8 +1830,6 @@ void CFakeOnline::SendRFSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumber) //
 	pMsg.index[0] = SET_NUMBERHB(aIndex);
 
 	pMsg.index[1] = SET_NUMBERLB(aIndex);
-
-#endif
 
 	pMsg.dis = 0;
 
@@ -2099,6 +2077,10 @@ std::string GetRandomBotPhrase(bool realPlayerNearby, bool inParty)
 
 void CFakeOnline::AttemptRandomBotComment(int aIndex)
 {
+	// Bounds check for aIndex
+	if (!OBJECT_RANGE(aIndex))
+		return;
+
 	LPOBJ lpObj = &gObj[aIndex];
 
 	if (lpObj->Connected != OBJECT_ONLINE || lpObj->Type != OBJECT_USER)
@@ -2106,6 +2088,10 @@ void CFakeOnline::AttemptRandomBotComment(int aIndex)
 
 	OFFEXP_DATA* pBotData = this->GetOffExpInfo(lpObj);
 	if (pBotData == nullptr)
+		return;
+
+	// Safety check for VpPlayer2
+	if (lpObj->VpPlayer2 == NULL)
 		return;
 
 	bool realPlayerNearby = false;
@@ -2128,10 +2114,8 @@ void CFakeOnline::AttemptRandomBotComment(int aIndex)
 		if (!phrase.empty()) {
 			char msg[256];
 			strncpy_s(msg, phrase.c_str(), _TRUNCATE);
-			// FIX: Changed from CCommandManager.CommandPost to gCommandManager.CommandPost
 			gCommandManager->CommandPost(lpObj, msg);
-				this->m_dwLastCommentTick[aIndex] = GetTickCount();
-			}
+			this->m_dwLastCommentTick[aIndex] = GetTickCount();
 		}
 	}
 

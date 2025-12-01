@@ -618,6 +618,56 @@ void gObjCharZeroSet(int aIndex) // OK
 	lpObj->UsePartyMatching = 0;
 	lpObj->UsePartyMatchingJoin = 0;
 
+	// Initialize FakeOnline and Offline mode flags
+#if USE_FAKE_ONLINE == TRUE
+	lpObj->IsFakeOnline = 0;
+	lpObj->FakeOnline = 0;
+	lpObj->m_OfflineMoveDelay = 0;
+	lpObj->IsFakeRegen = false;
+	lpObj->IsFakePVPMode = 0;
+	lpObj->IsFakePartyMode = 0;
+	lpObj->IsFakeMoveRange = 0;
+	lpObj->IsFakeTimeLag = 0;
+	lpObj->IsFakeSendParty = 0;
+#endif
+	lpObj->m_OfflineSocket = false;
+	lpObj->m_OfflineMode = 0;
+	lpObj->MuOffHelperTime = 0;
+	lpObj->HuntingRange = 0;
+	lpObj->RecoveryPotionOn = 0;
+	lpObj->RecoveryPotionPercent = 0;
+	lpObj->RecoveryHealOn = 0;
+	lpObj->RecoveryHealPercent = 0;
+	lpObj->RecoveryDrainOn = 0;
+	lpObj->RecoveryDrainPercent = 0;
+	lpObj->DistanceLongOn = 0;
+	lpObj->DistanceReturnOn = 0;
+	lpObj->DistanceMin = 0;
+	lpObj->SkillBasicID = 0;
+	lpObj->ComboOn = 0;
+	lpObj->PartyModeOn = 0;
+	lpObj->PartyModeHealOn = 0;
+	lpObj->PartyModeHealPercent = 0;
+	lpObj->PartyModeBuffOn = 0;
+	lpObj->BuffOn = 0;
+	memset(lpObj->BuffSkill, 0, sizeof(lpObj->BuffSkill));
+	lpObj->ObtainRange = 0;
+	lpObj->ObtainRepairOn = 0;
+	lpObj->ObtainPickNear = 0;
+	lpObj->ObtainPickSelected = 0;
+	lpObj->ObtainPickJewels = 0;
+	lpObj->ObtainPickAncient = 0;
+	lpObj->ObtainPickMoney = 0;
+	lpObj->ObtainPickExcellent = 0;
+	lpObj->ObtainPickExtra = 0;
+	lpObj->ObtainPickExtraCount = 0;
+	memset(lpObj->ObtainPickItemList, 0, sizeof(lpObj->ObtainPickItemList));
+	lpObj->orderskill = 0;
+	lpObj->m_OfflineCoordX = 0;
+	lpObj->m_OfflineCoordY = 0;
+	lpObj->m_OfflineTimeResetMove = 0;
+	lpObj->AttackCustomDelay = 0;
+
 	memset(lpObj->CashShopTransaction,0,sizeof(lpObj->CashShopTransaction));
 
 	memset(lpObj->CommandManagerTransaction,0,sizeof(lpObj->CommandManagerTransaction));
