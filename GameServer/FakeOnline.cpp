@@ -804,23 +804,15 @@ void CFakeOnline::Attack(int aIndex)
 		return;
 	}
 
-	// DEBUG: Log attack start
-
-
-	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] Attack START for %s", lpObj->Name);
 
 
 	this->SuDungMauMana(aIndex);
-	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] SuDungMauMana OK");
 
 	this->TuDongBuffSkill(aIndex);
-	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] TuDongBuffSkill OK");
 
 	this->TuDongDanhSkill(aIndex);
-	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] TuDongDanhSkill OK");
 
 	//FakeAutoRepair(aIndex);
-	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] Attack END for %s", lpObj->Name);
 }
 
 
@@ -1145,58 +1137,106 @@ void CFakeOnline::QuayLaiToaDoGoc(int aIndex)
 
 
 
-
-
-			// Debug log every 10 seconds
-
-
-			static DWORD lastDebugMove = 0;
-
-
-			if (GetTickCount() - lastDebugMove > 10000)
-
-
-			{
-
-
-				LogAdd(LOG_RED, "[FakeOnline][DEBUG] %s Pos(%d,%d) Dest(%d,%d) Dist=%d MoveRange=%d InSafe=%d FarFromDest=%d IsFakeRegen=%d",
-
-
-					lpObj->Name, lpObj->X, lpObj->Y, info->MapX, info->MapY, PhamViDiTrain, lpObj->IsFakeMoveRange, inSafeZone, farFromDest, lpObj->IsFakeRegen);
-
-
-				lastDebugMove = GetTickCount();
-
-
-			}
-
-
-
-
-
 			if ((farFromDest && !lpObj->IsFakeRegen) || inSafeZone)
 			{
+
+				// FIX: Move step by step (1-3 units per tick) instead of accumulating 16 moves at once
+
+
+
+				// This prevents "teleporting" and makes walking smooth like real players
+
+
 				int DiChuyenX = lpObj->X;
 				int DiChuyenY = lpObj->Y;
-				for (int n = 0; n < 16; n++)
+				// Calculate single step movement (1-3 units towards destination)
+
+
+				// Calculate direction and step towards destination
+
+
+
+				if (lpObj->X > info->MapX) { DiChuyenX -= random(1, 3); }
+
+
+				else if (lpObj->X < info->MapX) { DiChuyenX += random(1, 3); }
+
+
+
+				if (lpObj->Y > info->MapY) { DiChuyenY -= random(1, 3); }
+
+
+
+				else if (lpObj->Y < info->MapY) { DiChuyenY += random(1, 3); }
+
+
+
+
+				// Bounds check
+
+
+				if (DiChuyenX < 0) DiChuyenX = 0;
+
+
+				if (DiChuyenX > 255) DiChuyenX = 255;
+
+
+				if (DiChuyenY < 0) DiChuyenY = 0;
+
+
+				if (DiChuyenY > 255) DiChuyenY = 255;
+
+
+
+
+
+				// Check if reached destination
+
+
+				if (DiChuyenX == info->MapX && DiChuyenY == info->MapY) {
+
+
+					lpObj->IsFakeRegen = true;
+
+
+				}
+
+
+
+
+
+				// Try to find a valid position (try up to 8 times with different directions)
+
+
+				for (int n = 0; n < 8; n++)
+
+
+					// Try to find a valid walkable position
+
+
+
+					if (gMap[lpObj->Map].CheckAttr(DiChuyenX, DiChuyenY, 2) == 0 &&
+
+
+						gMap[lpObj->Map].CheckAttr(DiChuyenX, DiChuyenY, 4) == 0 &&
+
+
+						gMap[lpObj->Map].CheckAttr(DiChuyenX, DiChuyenY, 8) == 0)
+
 				{
-					if (lpObj->X > info->MapX) { DiChuyenX -= random(1, 3); }
-					else if (lpObj->X < info->MapX){ DiChuyenX += random(1, 3); }
-					else { DiChuyenX = info->MapX; }
-
-					if (lpObj->Y > info->MapY) { DiChuyenY -= random(1, 3); }
-					else if (lpObj->Y < info->MapY) { DiChuyenY += random(1, 3); }
-					else { DiChuyenY = info->MapY; }
-
-					if (DiChuyenX == info->MapX && DiChuyenY == info->MapY) { lpObj->IsFakeRegen = true; }
-
-					if (gMap[lpObj->Map].CheckAttr(DiChuyenX, DiChuyenY, 2) == 0 && gMap[lpObj->Map].CheckAttr(DiChuyenX, DiChuyenY, 4) == 0 && gMap[lpObj->Map].CheckAttr(DiChuyenX, DiChuyenY, 8) == 0)
-					{
 						lpObj->m_OfflineTimeResetMove = GetTickCount();
-						FakeAnimationMove(lpObj->Index, DiChuyenX, DiChuyenY, false);
-						LogAdd(LOG_BLUE, "[FakeOnline][%s] Mover a ubicación predeterminada (%d/%d)", lpObj->Name, DiChuyenX, DiChuyenY);
+
+
+
+						FakeAnimationMove(lpObj->Index, DiChuyenX, DiChuyenY, true);
+
+
+						LogAdd(LOG_BLUE, "[FakeOnline][%s] Walking to destination (%d/%d)", lpObj->Name, DiChuyenX, DiChuyenY);
+
+
 						return;
-					}
+
+
 				}
 				return;
 
@@ -1507,7 +1547,6 @@ bool CFakeOnline::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterInd
 	}
 
 	int NearestDistance = 100;
-	int monstersFound = 0;
 
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
@@ -1515,8 +1554,6 @@ bool CFakeOnline::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterInd
 		{
 			continue;
 		}
-
-		monstersFound++;
 
 		if (gSkillManager->CheckSkillTarget(lpObj, lpObj->VpPlayer2[n].index, -1, lpObj->VpPlayer2[n].type) == 0)
 		{
@@ -1543,19 +1580,6 @@ bool CFakeOnline::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterInd
 		}
 	}
 
-	// DEBUG: Log results
-
-
-	if (NearestDistance == 100)
-
-
-	{
-
-
-		LogAdd(LOG_BLUE, "[GetTargetMonster] No valid target. MonstersInViewport=%d", monstersFound);
-
-
-	}
 
 	return ((NearestDistance == 100) ? 0 : 1);
 }
@@ -1597,13 +1621,25 @@ bool CFakeOnline::GetTargetPlayer(LPOBJ lpObj, int SkillNumber, int* MonsterInde
 		{
 			if (lpObj->IsFakePartyMode == 3 && !gObj[lpObj->VpPlayer2[n].index].IsFakeOnline) { return 0; }
 			lpObj->IsFakeSendParty = GetTickCount();
-			FakeAnimationMove(lpObj->Index, gObj[lpObj->VpPlayer2[n].index].X, gObj[lpObj->VpPlayer2[n].index].Y, false);
 			this->GuiYCParty(lpObj->Index, lpObj->VpPlayer2[n].index);
-			//LogAdd(LOG_RED,"Send Yeu Cau Party cho %s",gObj[lpObj->VpPlayer2[n].index].Name);
 			return 0;
 		}
+		// FIX: Check if the BOT has self-defense rights against the player (player attacked the bot)
+
+
+
+		// Check if the PLAYER has the BOT in their self-defense list (meaning player attacked bot first)
+
+
+
+		// When player attacks bot, the game sets player->SelfDefense[] = botIndex
+
+
 		if (gObjIsSelfDefense(&gObj[lpObj->VpPlayer2[n].index], lpObj->Index))
 		{
+
+			LogAdd(LOG_RED, "[FakeOnline][PVP] %s detected attacker: %s - counter-attacking!", lpObj->Name, gObj[lpObj->VpPlayer2[n].index].Name);
+
 			(*MonsterIndex) = lpObj->VpPlayer2[n].index;
 			NearestDistance = gObjCalcDistance(lpObj, &gObj[lpObj->VpPlayer2[n].index]);
 			continue;
@@ -1729,8 +1765,11 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 		if (dis > distance)
 		{
-			FakeAnimationMove(lpObj->Index, gObj[KillUser].X, gObj[KillUser].Y, false);
-			LogAdd(LOG_RED, "DEBUG GetTargetPlayer4 %d ~ %d", dis, distance);
+			// Move towards player to get in attack range
+
+
+
+			FakeAnimationMove(lpObj->Index, gObj[KillUser].X, gObj[KillUser].Y, true);
 			return;
 		}
 		else
@@ -1753,11 +1792,9 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 			{
 				caminar = 1;
 			}
-			LogAdd(LOG_RED, "DEBUG caminar %d || Bot[%d,%d] User[%d,%d]", caminar, lpObj->X, lpObj->Y, gObj[KillUser].X, gObj[KillUser].Y);
-
-			if (caminar == 1 /*|| ((GetTickCount() - lpObj->m_OfflineMoveDelay) >= 5000)*/);//Time di chuyen)
+			if (caminar == 1)
 			{
-				FakeAnimationMove(lpObj->Index, gObj[KillUser].X, gObj[KillUser].Y, false);
+				FakeAnimationMove(lpObj->Index, gObj[KillUser].X, gObj[KillUser].Y, true);
 			}
 
 			atacar = 1;
@@ -1859,26 +1896,16 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 		return;
 	}
 	//=============================================================
-	
-	// DEBUG: Log monster search
-
-
-
-	LogAdd(LOG_BLUE, "[TuDongDanhSkill][DEBUG] %s searching for monsters, VpCount2=%d", lpObj->Name, lpObj->VPCount2);
 
 	
 	if (this->GetTargetMonster(lpObj, SkillRender->m_index, &tObjNum) != 0)
 	{
 
 
-		LogAdd(LOG_BLUE, "[TuDongDanhSkill][DEBUG] Found monster target: %d (%s)", tObjNum, gObj[tObjNum].Name);
-
 		atacar = 0;
 
 		if (gObj[tObjNum].Live == 0 || gObj[tObjNum].State == OBJECT_EMPTY || gObj[tObjNum].RegenType != 0)
 		{
-
-			LogAdd(LOG_BLUE, "[TuDongDanhSkill][DEBUG] Monster invalid state, skipping");
 
 			return;
 		}
