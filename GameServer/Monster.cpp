@@ -971,7 +971,7 @@ void gObjMonsterBeattackRecv(BYTE* aRecv,int aIndex) // OK
 {
 	PMSG_MULTI_SKILL_ATTACK_RECV* lpMsg = (PMSG_MULTI_SKILL_ATTACK_RECV*)aRecv;
 
-	CSkill* lpSkill = &gObj[aIndex].Skill[MAKE_NUMBERW(lpMsg->skill[0], lpMsg->skill[1])];
+	CSkill* lpSkill = &gObj[aIndex].Skill[lpMsg->skill];  // Original: single byte skill
 
 	if(lpSkill->IsSkill() == 0)
 	{
