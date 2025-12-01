@@ -833,16 +833,19 @@ void DGCharacterInfoRecv(SDHP_CHARACTER_INFO_RECV* lpMsg) // OK
 		lpObj->DistanceMin = (DWORD)(info->TimeReturn);
 		lpObj->m_OfflineMoveDelay = GetTickCount();//Time di chuyen
 
-		if (info->UseBuffs[0] > 0) {
+		// FIX: Check for valid buff skill IDs (skip -1/65535 and values > 500)
+		// UseBuffs is read as short, so -1 becomes 65535 when cast to unsigned
+		if (info->UseBuffs[0] > 0 && info->UseBuffs[0] < 500) {
 			lpObj->BuffOn = 1;
 			//if(info->BuffParty == 1)
 			{
 				lpObj->PartyModeOn = 1;    //Buff Heal Elf
 				lpObj->PartyModeBuffOn = 1; //Buff Cho Party
 			}
-			lpObj->BuffSkill[0] = info->UseBuffs[0];
-			lpObj->BuffSkill[1] = info->UseBuffs[1];
-			lpObj->BuffSkill[2] = info->UseBuffs[2];
+			// Only set valid buff skills (between 1 and 499)
+			lpObj->BuffSkill[0] = (info->UseBuffs[0] > 0 && info->UseBuffs[0] < 500) ? info->UseBuffs[0] : 0;
+			lpObj->BuffSkill[1] = (info->UseBuffs[1] > 0 && info->UseBuffs[1] < 500) ? info->UseBuffs[1] : 0;
+			lpObj->BuffSkill[2] = (info->UseBuffs[2] > 0 && info->UseBuffs[2] < 500) ? info->UseBuffs[2] : 0;
 		}
 
 		lpObj->RecoveryPotionOn = 1;

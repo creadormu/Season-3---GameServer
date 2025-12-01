@@ -633,6 +633,13 @@ void CFakeOnline::Attack(int aIndex)
 		LogAdd(LOG_RED, "[FakeOnline][ERROR] Bot %s has NULL VpPlayer2!", lpObj->Name);
 		return;
 	}
+	
+	// Safety check: Ensure skill array is allocated
+	if (lpObj->Skill == NULL)
+	{
+		LogAdd(LOG_RED, "[FakeOnline][ERROR] Bot %s has NULL Skill array!", lpObj->Name);
+		return;
+	}
 
 	if (!lpObj->IsFakeRegen)
 	{
@@ -647,14 +654,21 @@ void CFakeOnline::Attack(int aIndex)
 	{
 		return;
 	}
+	
+	// DEBUG: Log attack start
+	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] Attack START for %s", lpObj->Name);
 
 	this->SuDungMauMana(aIndex);
+	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] SuDungMauMana OK");
 
 	this->TuDongBuffSkill(aIndex);
+	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] TuDongBuffSkill OK");
 
 	this->TuDongDanhSkill(aIndex);
+	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] TuDongDanhSkill OK");
 
 	FakeAutoRepair(aIndex);
+	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] Attack END for %s", lpObj->Name);
 }
 
 
@@ -1150,7 +1164,8 @@ void CFakeOnline::TuDongBuffSkill(int aIndex)	//-- OK
 		CSkill* RenderBuff;
 		for (int n = 0; n < 3; n++)
 		{
-			if (lpObj->BuffSkill[n] > 0)
+			// FIX: Check for valid skill ID (skip -1/65535 and 0)
+			if (lpObj->BuffSkill[n] > 0 && lpObj->BuffSkill[n] < 500)
 			{
 				RenderBuff = gSkillManager->GetSkill(lpObj, lpObj->BuffSkill[n]);
 
