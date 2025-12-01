@@ -968,22 +968,17 @@ void CFakeOnline::QuayLaiToaDoGoc(int aIndex)
 
 			if ((farFromDest && !lpObj->IsFakeRegen) || inSafeZone)
 			{
-				// FIX: Move step by step (1-3 units per tick) instead of accumulating 16 moves at once
-				// This prevents "teleporting" and makes walking smooth like real players
+				// Walk step by step towards destination (original working logic)
+				// Each call moves 1-3 units towards the destination
 				int DiChuyenX = lpObj->X;
 				int DiChuyenY = lpObj->Y;
 				
-				// Calculate single step movement (1-3 units towards destination)
-				int stepX = random(1, 3);
-				int stepY = random(1, 3);
+				// Calculate direction and step towards destination
+				if (lpObj->X > info->MapX) { DiChuyenX -= random(1, 3); }
+				else if (lpObj->X < info->MapX) { DiChuyenX += random(1, 3); }
 				
-				if (lpObj->X > info->MapX) { DiChuyenX = lpObj->X - stepX; }
-				else if (lpObj->X < info->MapX) { DiChuyenX = lpObj->X + stepX; }
-				else { DiChuyenX = info->MapX; }
-				
-				if (lpObj->Y > info->MapY) { DiChuyenY = lpObj->Y - stepY; }
-				else if (lpObj->Y < info->MapY) { DiChuyenY = lpObj->Y + stepY; }
-				else { DiChuyenY = info->MapY; }
+				if (lpObj->Y > info->MapY) { DiChuyenY -= random(1, 3); }
+				else if (lpObj->Y < info->MapY) { DiChuyenY += random(1, 3); }
 				
 				// Bounds check
 				if (DiChuyenX < 0) DiChuyenX = 0;
@@ -996,26 +991,15 @@ void CFakeOnline::QuayLaiToaDoGoc(int aIndex)
 					lpObj->IsFakeRegen = true; 
 				}
 				
-				// Try to find a valid position (try up to 8 times with different directions)
-				for (int n = 0; n < 8; n++)
+				// Try to find a valid walkable position
+				if (gMap[lpObj->Map].CheckAttr(DiChuyenX, DiChuyenY, 2) == 0 && 
+					gMap[lpObj->Map].CheckAttr(DiChuyenX, DiChuyenY, 4) == 0 && 
+					gMap[lpObj->Map].CheckAttr(DiChuyenX, DiChuyenY, 8) == 0)
 				{
-					if (gMap[lpObj->Map].CheckAttr(DiChuyenX, DiChuyenY, 2) == 0 && 
-						gMap[lpObj->Map].CheckAttr(DiChuyenX, DiChuyenY, 4) == 0 && 
-						gMap[lpObj->Map].CheckAttr(DiChuyenX, DiChuyenY, 8) == 0)
-					{
-						lpObj->m_OfflineTimeResetMove = GetTickCount();
-						FakeAnimationMove(lpObj->Index, DiChuyenX, DiChuyenY, true); // Use dixa=true for smooth movement
-						return;
-					}
-					// Try a slightly different position if blocked
-					DiChuyenX = lpObj->X + (random(0, 2) - 1) * random(1, 2);
-					DiChuyenY = lpObj->Y + (random(0, 2) - 1) * random(1, 2);
-					
-					// Bounds check
-					if (DiChuyenX < 0) DiChuyenX = 0;
-					if (DiChuyenX > 255) DiChuyenX = 255;
-					if (DiChuyenY < 0) DiChuyenY = 0;
-					if (DiChuyenY > 255) DiChuyenY = 255;
+					lpObj->m_OfflineTimeResetMove = GetTickCount();
+					FakeAnimationMove(lpObj->Index, DiChuyenX, DiChuyenY, true);
+					LogAdd(LOG_BLUE, "[FakeOnline][%s] Walking to destination (%d/%d)", lpObj->Name, DiChuyenX, DiChuyenY);
+					return;
 				}
 				return;
 			}
@@ -1335,7 +1319,7 @@ bool CFakeOnline::GetTargetPlayer(LPOBJ lpObj, int SkillNumber, int* MonsterInde
 		{
 			continue;
 		}
-		if (lpObj->IsFakePartyMode >= 2 && gParty->IsParty(gObj[lpObj->VpPlayer2[n].index].PartyNumber) == 0 && (GetTickCount() >= lpObj->IsFakeSendParty + 5000) && !gObjIsSelfDefense(lpObj, lpObj->VpPlayer2[n].index))
+		if (lpObj->IsFakePartyMode >= 2 && gParty->IsParty(gObj[lpObj->VpPlayer2[n].index].PartyNumber) == 0 && (GetTickCount() >= lpObj->IsFakeSendParty + 5000) && !gObjIsSelfDefense(&gObj[lpObj->VpPlayer2[n].index], lpObj->Index))
 		{
 			if (lpObj->IsFakePartyMode == 3 && !gObj[lpObj->VpPlayer2[n].index].IsFakeOnline) { return 0; }
 			lpObj->IsFakeSendParty = GetTickCount();
@@ -1343,9 +1327,11 @@ bool CFakeOnline::GetTargetPlayer(LPOBJ lpObj, int SkillNumber, int* MonsterInde
 			this->GuiYCParty(lpObj->Index, lpObj->VpPlayer2[n].index);
 			return 0;
 		}
-		// FIX: Check if the BOT has self-defense rights against the player (player attacked the bot)
-		if (gObjIsSelfDefense(lpObj, lpObj->VpPlayer2[n].index))
+		// Check if the PLAYER has the BOT in their self-defense list (meaning player attacked bot first)
+		// When player attacks bot, the game sets player->SelfDefense[] = botIndex
+		if (gObjIsSelfDefense(&gObj[lpObj->VpPlayer2[n].index], lpObj->Index))
 		{
+			LogAdd(LOG_RED, "[FakeOnline][PVP] %s detected attacker: %s - counter-attacking!", lpObj->Name, gObj[lpObj->VpPlayer2[n].index].Name);
 			(*MonsterIndex) = lpObj->VpPlayer2[n].index;
 			NearestDistance = gObjCalcDistance(lpObj, &gObj[lpObj->VpPlayer2[n].index]);
 			continue;
@@ -1453,29 +1439,8 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 		if (dis > distance)
 		{
-			// FIX: Move step by step towards player instead of teleporting directly
-			// Only move if enough time has passed (prevents robot-like rapid movements)
-			if ((GetTickCount() - lpObj->m_OfflineMoveDelay) >= 500) // 500ms between movements
-			{
-				int moveX = lpObj->X;
-				int moveY = lpObj->Y;
-				int step = random(2, 4); // Move 2-4 units per step
-				
-				if (lpObj->X > gObj[KillUser].X) { moveX = lpObj->X - step; }
-				else if (lpObj->X < gObj[KillUser].X) { moveX = lpObj->X + step; }
-				
-				if (lpObj->Y > gObj[KillUser].Y) { moveY = lpObj->Y - step; }
-				else if (lpObj->Y < gObj[KillUser].Y) { moveY = lpObj->Y + step; }
-				
-				// Bounds check
-				if (moveX < 0) moveX = 0;
-				if (moveX > 255) moveX = 255;
-				if (moveY < 0) moveY = 0;
-				if (moveY > 255) moveY = 255;
-				
-				lpObj->m_OfflineMoveDelay = GetTickCount();
-				FakeAnimationMove(lpObj->Index, moveX, moveY, true);
-			}
+			// Move towards player to get in attack range
+			FakeAnimationMove(lpObj->Index, gObj[KillUser].X, gObj[KillUser].Y, true);
 			return;
 		}
 		else
@@ -1498,21 +1463,9 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 				caminar = 1;
 			}
 
-			// FIX: Only move if not in range AND enough time has passed
-			if (caminar == 1 && (GetTickCount() - lpObj->m_OfflineMoveDelay) >= 500)
+			if (caminar == 1)
 			{
-				int moveX = lpObj->X;
-				int moveY = lpObj->Y;
-				int step = random(1, 2);
-				
-				if (lpObj->X > gObj[KillUser].X) { moveX = lpObj->X - step; }
-				else if (lpObj->X < gObj[KillUser].X) { moveX = lpObj->X + step; }
-				
-				if (lpObj->Y > gObj[KillUser].Y) { moveY = lpObj->Y - step; }
-				else if (lpObj->Y < gObj[KillUser].Y) { moveY = lpObj->Y + step; }
-				
-				lpObj->m_OfflineMoveDelay = GetTickCount();
-				FakeAnimationMove(lpObj->Index, moveX, moveY, true);
+				FakeAnimationMove(lpObj->Index, gObj[KillUser].X, gObj[KillUser].Y, true);
 			}
 
 			atacar = 1;
