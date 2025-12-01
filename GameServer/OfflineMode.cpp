@@ -675,9 +675,7 @@ void OfflineMode::RenderAttack(int aIndex)	//-- INCOMPLETO
 
 						pMsg.header.set(0x1E, sizeof(pMsg));
 
-						pMsg.skill[0] = SET_NUMBERHB(SkillRender->m_index);
-
-						pMsg.skill[1] = SET_NUMBERLB(SkillRender->m_index);
+						pMsg.skill = (BYTE)SkillRender->m_index;  // Original: single byte
 
 						pMsg.x = (BYTE)gObj[tObjNum].X;
 

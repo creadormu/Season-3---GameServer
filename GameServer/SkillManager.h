@@ -153,7 +153,7 @@ enum eSkillNumber
 struct PMSG_MULTI_SKILL_ATTACK_RECV
 {
 	PBMSG_HEAD header; // C3:[PROTOCOL_CODE4]
-	BYTE skill[2];
+	BYTE skill;        // Original: 1 byte
 	BYTE x;
 	BYTE y;
 	BYTE serial;
@@ -169,7 +169,7 @@ struct PMSG_MULTI_SKILL_ATTACK
 struct PMSG_SKILL_ATTACK_RECV
 {
 	PBMSG_HEAD header; // C3:19
-	BYTE skill[2];
+	BYTE skill;        // Original: 1 byte (client sends this format)
 	BYTE index[2];
 	BYTE dis;
 };
@@ -177,14 +177,14 @@ struct PMSG_SKILL_ATTACK_RECV
 struct PMSG_SKILL_CANCEL_RECV
 {
 	PBMSG_HEAD header; // C3:1B
-	BYTE skill[2];
+	BYTE skill;        // Original: 1 byte
 	BYTE index[2];
 };
 
 struct PMSG_DURATION_SKILL_ATTACK_RECV
 {
 	PBMSG_HEAD header; // C3:1E
-	BYTE skill[2];
+	BYTE skill;        // Original: 1 byte
 	BYTE x;
 	BYTE y;
 	BYTE dir;
@@ -226,7 +226,7 @@ struct PMSG_SKILL_TELEPORT_ALLY_RECV
 struct PMSG_SKILL_ATTACK_SEND
 {
 	PBMSG_HEAD header; // C3:19
-	BYTE skill[2];
+	BYTE skill;        // Original: 1 byte
 	BYTE index[2];
 	BYTE target[2];
 };
@@ -234,14 +234,14 @@ struct PMSG_SKILL_ATTACK_SEND
 struct PMSG_SKILL_CANCEL_SEND
 {
 	PBMSG_HEAD header; // C1:1B
-	BYTE skill[2];
+	BYTE skill;        // Original: 1 byte
 	BYTE index[2];
 };
 
 struct PMSG_DURATION_SKILL_ATTACK_SEND
 {
 	PBMSG_HEAD header; // C3:1E
-	BYTE skill[2];
+	BYTE skill;        // Original: 1 byte
 	BYTE index[2];
 	BYTE x;
 	BYTE y;

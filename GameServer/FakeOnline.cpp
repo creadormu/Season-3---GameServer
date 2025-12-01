@@ -1497,9 +1497,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 						pMsg.header.set(0x1E, sizeof(pMsg));
 
-						pMsg.skill[0] = SET_NUMBERHB(SkillRender->m_index);
-
-						pMsg.skill[1] = SET_NUMBERLB(SkillRender->m_index);
+						pMsg.skill = (BYTE)SkillRender->m_index;  // Original: single byte
 
 						pMsg.x = (BYTE)gObj[KillUser].X;
 
@@ -1653,9 +1651,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 						pMsg.header.set(0x1E, sizeof(pMsg));
 
-						pMsg.skill[0] = SET_NUMBERHB(SkillRender->m_index);
-
-						pMsg.skill[1] = SET_NUMBERLB(SkillRender->m_index);
+						pMsg.skill = (BYTE)SkillRender->m_index;  // Original: single byte
 
 						pMsg.x = (BYTE)gObj[tObjNum].X;
 
@@ -1782,9 +1778,7 @@ void CFakeOnline::SendDurationSkillAttack(LPOBJ lpObj, int aIndex, int SkillNumb
 
 	pMsg.header.set(0x1E, sizeof(pMsg));
 
-	pMsg.skill[0] = SET_NUMBERHB(SkillNumber);
-
-	pMsg.skill[1] = SET_NUMBERLB(SkillNumber);
+	pMsg.skill = (BYTE)SkillNumber;  // Original: single byte
 
 	pMsg.x = (BYTE)gObj[aIndex].X;
 

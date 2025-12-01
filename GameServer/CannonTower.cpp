@@ -39,9 +39,7 @@ void CCannonTower::FindTarget(int aIndex) // OK
 
 	int size = sizeof(pMsg);
 
-	pMsg.skill[0] = SET_NUMBERHB(1);
-
-	pMsg.skill[1] = SET_NUMBERLB(1);
+	pMsg.skill = 1;  // Original: single byte
 
 	pMsg.x = (BYTE)lpObj->X;
 
