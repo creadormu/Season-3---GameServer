@@ -673,7 +673,8 @@ void CFakeOnline::Attack(int aIndex)
 	this->TuDongDanhSkill(aIndex);
 	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] TuDongDanhSkill OK");
 
-	FakeAutoRepair(aIndex);
+	// FakeAutoRepair disabled - causes crash for bots without proper inventory
+	// FakeAutoRepair(aIndex);
 	LogAdd(LOG_BLUE, "[FakeOnline][DEBUG] Attack END for %s", lpObj->Name);
 }
 
@@ -1258,10 +1259,12 @@ bool CFakeOnline::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterInd
 	// Safety check for VpPlayer2
 	if (lpObj->VpPlayer2 == NULL)
 	{
+		LogAdd(LOG_RED, "[GetTargetMonster] VpPlayer2 is NULL!");
 		return 0;
 	}
 
 	int NearestDistance = 100;
+	int monstersFound = 0;
 
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
@@ -1269,6 +1272,8 @@ bool CFakeOnline::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterInd
 		{
 			continue;
 		}
+		
+		monstersFound++;
 
 		if (gSkillManager->CheckSkillTarget(lpObj, lpObj->VpPlayer2[n].index, -1, lpObj->VpPlayer2[n].type) == 0)
 		{
@@ -1295,6 +1300,12 @@ bool CFakeOnline::GetTargetMonster(LPOBJ lpObj, int SkillNumber, int* MonsterInd
 		}
 	}
 
+	// DEBUG: Log results
+	if (NearestDistance == 100)
+	{
+		LogAdd(LOG_BLUE, "[GetTargetMonster] No valid target. MonstersInViewport=%d", monstersFound);
+	}
+	
 	return ((NearestDistance == 100) ? 0 : 1);
 }
 
@@ -1569,12 +1580,17 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 		return;
 	}
 	//=============================================================
+	// DEBUG: Log monster search
+	LogAdd(LOG_BLUE, "[TuDongDanhSkill][DEBUG] %s searching for monsters, VpCount2=%d", lpObj->Name, lpObj->VPCount2);
+	
 	if (this->GetTargetMonster(lpObj, SkillRender->m_index, &tObjNum) != 0)
 	{
+		LogAdd(LOG_BLUE, "[TuDongDanhSkill][DEBUG] Found monster target: %d (%s)", tObjNum, gObj[tObjNum].Name);
 		atacar = 0;
 
 		if (gObj[tObjNum].Live == 0 || gObj[tObjNum].State == OBJECT_EMPTY || gObj[tObjNum].RegenType != 0)
 		{
+			LogAdd(LOG_BLUE, "[TuDongDanhSkill][DEBUG] Monster invalid state, skipping");
 			return;
 		}
 
