@@ -626,14 +626,12 @@ void CFakeOnline::Attack(int aIndex)
 	{
 		return;
 	}
-
-	// Debug: Log attack function entry every 10 seconds
-	static DWORD lastDebugTime = 0;
-	if (GetTickCount() - lastDebugTime > 10000)
+	
+	// Safety check: Ensure viewport is allocated
+	if (lpObj->VpPlayer2 == NULL)
 	{
-		LogAdd(LOG_BLACK, "[FakeOnline][DEBUG] Attack called for %s, IsFakeRegen=%d, State=%d, Live=%d",
-			lpObj->Name, lpObj->IsFakeRegen, lpObj->State, lpObj->Live);
-		lastDebugTime = GetTickCount();
+		LogAdd(LOG_RED, "[FakeOnline][ERROR] Bot %s has NULL VpPlayer2!", lpObj->Name);
+		return;
 	}
 
 	if (!lpObj->IsFakeRegen)
@@ -647,10 +645,8 @@ void CFakeOnline::Attack(int aIndex)
 
 	if (gServerInfo->InSafeZone(aIndex) == true)
 	{
-		//this->OnHelperpAlreadyConnected(lpObj);
 		return;
 	}
-
 
 	this->SuDungMauMana(aIndex);
 
@@ -659,7 +655,6 @@ void CFakeOnline::Attack(int aIndex)
 	this->TuDongDanhSkill(aIndex);
 
 	FakeAutoRepair(aIndex);
-	//LogAdd(LOG_RED,"Fake Online Attack OK");
 }
 
 
@@ -1360,6 +1355,13 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 	{
 		return;
 	}
+	
+	// Safety check: Ensure viewport is allocated
+	if (lpObj->VpPlayer2 == NULL)
+	{
+		return;
+	}
+	
 	int caminar = 0;
 	int distance = (lpObj->HuntingRange > 6) ? 6 : lpObj->HuntingRange;
 
@@ -1376,7 +1378,6 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 	SkillRender = (lpObj->Life < ((lpObj->MaxLife * lpObj->RecoveryDrainPercent) / 100) && lpObj->RecoveryDrainOn != 0) ? gSkillManager->GetSkill(lpObj, SKILL_DRAIN_LIFE) : gSkillManager->GetSkill(lpObj, lpObj->SkillBasicID);
 	/*}*/
 
-
 	if (SkillRender == 0)
 	{
 		return;
@@ -1386,6 +1387,7 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 
 	int tObjNum = -1;
 	int KillUser = -1;
+	
 	if (this->GetTargetPlayer(lpObj, SkillRender->m_index, &KillUser) != 0 && lpObj->IsFakePVPMode >= 1)
 	{
 		atacar = 0;
@@ -1548,7 +1550,6 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 	//=============================================================
 	if (this->GetTargetMonster(lpObj, SkillRender->m_index, &tObjNum) != 0)
 	{
-
 		atacar = 0;
 
 		if (gObj[tObjNum].Live == 0 || gObj[tObjNum].State == OBJECT_EMPTY || gObj[tObjNum].RegenType != 0)
@@ -1659,7 +1660,6 @@ void CFakeOnline::TuDongDanhSkill(int aIndex)	//-- INCOMPLETO
 				{
 					if (SkillRender->m_skill != SKILL_DARK_SIDE)
 					{
-
 						PMSG_DURATION_SKILL_ATTACK_RECV pMsg;
 
 						pMsg.header.set(0x1E, sizeof(pMsg));
