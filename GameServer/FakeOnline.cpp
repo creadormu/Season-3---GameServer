@@ -954,7 +954,19 @@ void CFakeOnline::QuayLaiToaDoGoc(int aIndex)
 		}
 		if (GetTickCount() >= lpObj->m_OfflineTimeResetMove + 2000)
 		{
-			if ((PhamViDiTrain >= (lpObj->IsFakeMoveRange + 5) && !lpObj->IsFakeRegen) || gServerInfo->InSafeZone(lpObj->Index) == true)
+			bool inSafeZone = (gServerInfo->InSafeZone(lpObj->Index) == true);
+			bool farFromDest = (PhamViDiTrain >= (lpObj->IsFakeMoveRange + 5));
+
+			// Debug log every 10 seconds
+			static DWORD lastDebugMove = 0;
+			if (GetTickCount() - lastDebugMove > 10000)
+			{
+				LogAdd(LOG_RED, "[FakeOnline][DEBUG] %s Pos(%d,%d) Dest(%d,%d) Dist=%d MoveRange=%d InSafe=%d FarFromDest=%d IsFakeRegen=%d",
+					lpObj->Name, lpObj->X, lpObj->Y, info->MapX, info->MapY, PhamViDiTrain, lpObj->IsFakeMoveRange, inSafeZone, farFromDest, lpObj->IsFakeRegen);
+				lastDebugMove = GetTickCount();
+			}
+
+			if ((farFromDest && !lpObj->IsFakeRegen) || inSafeZone)
 			{
 				int DiChuyenX = lpObj->X;
 				int DiChuyenY = lpObj->Y;
@@ -982,7 +994,8 @@ void CFakeOnline::QuayLaiToaDoGoc(int aIndex)
 
 			}
 			else if (!lpObj->IsFakeRegen) {
-
+				// Bot reached destination area - enable attack mode
+				LogAdd(LOG_RED, "[FakeOnline][%s] Reached destination - Setting IsFakeRegen=TRUE", lpObj->Name);
 				lpObj->m_OfflineTimeResetMove = GetTickCount();
 				lpObj->IsFakeRegen = true;
 			}
